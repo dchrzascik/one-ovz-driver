@@ -1,0 +1,42 @@
+require 'rake'
+require 'rake/testtask'
+require 'rake/remote_task'
+
+# Configuration
+# domain where remote test are performed
+domain = 'oneadmin@ovz01'
+# set Ruby::RemoteTask variable
+set :domain, domain
+# directory where remote test are located
+remote_dir = '/mnt/one-ovz-driver'
+
+task :default => [:test]
+
+# Run tests on local machine
+Rake::TestTask.new(:test) do |t|
+  t.verbose = true
+  t.warning = true
+  t.test_files = FileList.new("test/var/remotes/vmm/ovz/*_test.rb")
+  t.libs = %w(lib src/var/remotes/vmm/ovz/)
+end
+
+# Copy whole project to remote directory @ ovz host
+# task may be used when nfs isn't set up
+task :copy, :dst do |t, args|
+  dst = args[:dst] ? args[:dst] : remote_dir
+  command = "rsync -r --exclude '.git' \`pwd\`\/ #{domain}:#{dst}"
+  sh command
+end
+
+# Run test remotly on openvz cluster node
+# remote_dir is used as a default dir
+remote_task :remote_test do |t|
+  run "cd #{remote_dir} && rake test"
+end
+
+# Install required gems
+task :gems do
+  %w(rake-remote_task openvz flexmock).each do |dependency|
+    sh "gem install #{dependency}"
+  end
+end
