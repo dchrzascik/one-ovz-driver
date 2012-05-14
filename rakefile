@@ -1,42 +1,49 @@
 require 'rake'
 require 'rake/testtask'
-require 'rake/remote_task'
 
 # Configuration
 # domain where remote test are performed
 domain = 'oneadmin@ovz01'
-# set Ruby::RemoteTask variable
-set :domain, domain
+# ruby-openvz dir - TODO use it as a gem in future
+ruby_openvz_dir = '/mnt/ruby-openvz'
 # directory where remote test are located
 remote_dir = '/mnt/one-ovz-driver'
 
 task :default => [:test]
 
-# Run tests on local machine
-Rake::TestTask.new(:test) do |t|
+def test(t, files)
   t.verbose = true
   t.warning = true
-  t.test_files = FileList.new("test/var/remotes/vmm/ovz/*_test.rb")
-  t.libs = %w(lib src/var/remotes/vmm/ovz/)
+  t.test_files = FileList.new(files)
+  t.libs = %W(lib src/var/remotes/vmm/ovz/ ../ruby-openvz/lib)
+end
+
+# Run only mock-based test on local machine
+Rake::TestTask.new(:test) do |t, args|
+  test(t, "test/var/remotes/vmm/ovz/*_test.rb")
+end
+
+# Run only integration tests on local machine
+Rake::TestTask.new(:test_module) do |t|
+  test(t, "test/var/remotes/vmm/ovz/*_test_module.rb")
 end
 
 # Copy whole project to remote directory @ ovz host
 # task may be used when nfs isn't set up
 task :copy, :dst do |t, args|
   dst = args[:dst] ? args[:dst] : remote_dir
-  command = "rsync -r --exclude '.git' \`pwd\`\/ #{domain}:#{dst}"
-  sh command
+  sh "rsync -r --exclude '.git' \`pwd\`\/ #{domain}:#{dst}"
 end
 
 # Run test remotly on openvz cluster node
 # remote_dir is used as a default dir
-remote_task :remote_test do |t|
-  run "cd #{remote_dir} && rake test"
+task :remote_test do
+  sh "ssh #{domain} \"cd #{remote_dir} && rvmsudo rake\""
 end
 
 # Install required gems
 task :gems do
-  %w(rake-remote_task openvz flexmock).each do |dependency|
+  %w(flexmock sixarm_ruby_magic_number_type).each do |dependency|
     sh "gem install #{dependency}"
   end
 end

@@ -16,19 +16,46 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# CPU
+if [ -f /proc/cpuinfo ]; then
+  cpuinfo=`cat /proc/cpuinfo`
+  ncpus=$(echo "$cpuinfo"|grep processor|wc -l)
+  total_cpu=$(($ncpus*100))
+  cpu_speed=$(echo "$cpuinfo"|grep "cpu MHz"|sort -u|sed s/[^0-9.]//g)
+  cpu_speed=`printf "%.2f" $cpu_speed`
+  free_cpu=`top -bin1| grep "Cpu"|cut -d ',' -f4|sed s/[^0-9.]//g`
+  free_cpu=`echo "$free_cpu*$ncpus"|bc`
+  used_cpu=`echo "$total_cpu - $free_cpu"|bc`
+  used_cpu=`printf "%.2f" $used_cpu`
+fi
+
+# MEMORY
+mem_info=`free -k`
+total_memory=`echo $mem_info|awk '{print $8}'`
+free_memory=`echo $mem_info|awk '{print $17}'`
+used_memory=$(($total_memory - $free_memory))
+
+
+# NETWORK
+if [ -f /proc/net/dev ]; then
+  net_info=`cat /proc/net/dev`
+  netrx=$(echo "$net_info"|grep eth0|cut -d: -f2|awk {'print $1'})
+  nettx=$(echo "$net_info"|grep eth0|cut -d: -f2|awk {'print $9'})
+fi
 
 # Print output
 echo "HYPERVISOR=ovz"
 
-echo "TOTALCPU=1"
-echo "CPUSPEED=1"
+echo "TOTALCPU=$total_cpu"
+echo "CPUSPEED=$cpu_speed"
 
-echo "TOTALMEMORY=1"
-echo "USEDMEMORY=1"
-echo "FREEMEMORY=1"
+echo "TOTALMEMORY=$total_memory"
+echo "USEDMEMORY=$used_memory"
+echo "FREEMEMORY=$free_memory"
 
-echo "FREECPU=1"
-echo "USEDCPU=1"
+echo "FREECPU=$free_cpu"
+echo "USEDCPU=$used_cpu"
 
-echo "NETRX=1"
-echo "NETTX=1"
+echo "NETRX=$netrx"
+echo "NETTX=$nettx"
+

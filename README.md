@@ -9,10 +9,10 @@ Cluster Node requirements
  * rvm is recommended to manage ruby version
  * ex. rvm [tutorial for centos 6](http://blog.jeffcosta.com/2011/07/22/install-ruby-version-manager-rvm-on-centos-6/)
 
-2. rake, rake-remote_task
+2. rake
+ * should be available by default, if not then install them manually
 <pre>
 gem install rake
-gem install rake-remote_task
 </pre>
 
 3. remaining gems

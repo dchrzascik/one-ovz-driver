@@ -17,23 +17,23 @@
 #--------------------------------------------------------------------------- #
 
 $: << "#{File.dirname(__FILE__)}"
+$: << "#{File.dirname(__FILE__)}/../../"
+# to be fixed
+$: << "/mnt/ruby-openvz/lib/"
 
 require 'open_vz_driver'
 require 'open_vz_data'
+require 'openvz'
 
-p 'Hello from one-ovz driver'
+open_vz_data = OpenNebula::OpenVzData.new STDIN
+inventory = OpenVZ::Inventory.new
+driver = OpenNebula::OpenVzDriver.new
 
-driver = OpenNebula::OpenVzDriver.new()
-# TODO change DATA to STDIN
-data = OpenNebula::OpenVzData.new(DATA)
-driver.deploy data
+# setup container
+ctid = OpenNebula::OpenVzDriver.ctid inventory
+container = OpenVZ::Container.new(ctid)
 
-p driver.deploy_id
+# final step
+deploy_ctid = driver.deploy open_vz_data, container
 
-__END__
-<?xml version="1.0" encoding="UTF-8"?>
-<TEMPLATE>
-  <VMID>
-    <![CDATA[24]]>
-  </VMID>
-</TEMPLATE>
+p deploy_ctid
