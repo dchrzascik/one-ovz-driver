@@ -18,15 +18,25 @@ def test(t, files)
   t.libs = %W(lib src/var/remotes/vmm/ovz/ ../ruby-openvz/lib)
 end
 
+# Ensure that env is correctly set up => there is appropriate ct image
+task :init_test do
+  disk = 'test/resources/disk.0'
+  next if File.exists? disk
+  p 'Downloading slackware-10.2-i386-minimal.tar.gz since template cache is needed for testing'
+  sh "wget -O #{disk} http://download.openvz.org/template/precreated/contrib/slackware-10.2-i386-minimal.tar.gz"
+end
+
 # Run only mock-based test on local machine
 Rake::TestTask.new(:test) do |t, args|
   test(t, "test/var/remotes/vmm/ovz/*_test.rb")
 end
+task :test => :init_test
 
 # Run only integration tests on local machine
 Rake::TestTask.new(:test_module) do |t|
   test(t, "test/var/remotes/vmm/ovz/*_test_module.rb")
 end
+task :test_module => :init_test
 
 # Copy whole project to remote directory @ ovz host
 # task may be used when nfs isn't set up
