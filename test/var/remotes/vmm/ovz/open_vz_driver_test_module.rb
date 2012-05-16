@@ -1,5 +1,3 @@
-$: << "#{File.dirname(__FILE__)}"
-
 require 'open_vz_driver'
 require 'openvz'
 require 'test_utils'
@@ -31,7 +29,7 @@ module OpenNebula
       assert_equal true, File.directory?("/vz/private/#{deploy_ctid}")
     ensure
       TestUtils.purge_ct deploy_ctid if deploy_ctid
-      TestUtils.purge_template deploy_ctid if deploy_ctid
+      TestUtils.purge_template "/vz/template/cache/one-#{deploy_ctid}.tar" if deploy_ctid
     end
   end
 end

@@ -1,20 +1,34 @@
-require 'rexml/document'
+require 'xml/mapping'
 
-include REXML
+# extends xml mapper to handle loading from stream
+# by default only loading from xml string / file is allowed
+module XML
+  module Mapping
+    module ClassMethods
+      def load_from_stream(stream, options={:mapping=>:_default})
+        xml = REXML::Document.new(stream)
+        load_from_xml xml.root, :mapping=>options[:mapping]
+      end
+    end
+  end
+end
 
 module OpenNebula
   # OpenVzData
   # class responsible for obtainting container data from deployment_file
   class OpenVzData
-    def initialize(deployment_stream)
-      @xmldoc = Document.new(deployment_stream)
-    end
+    include XML::Mapping
 
+    text_node :name, "NAME"
+    text_node :vmid, "VMID"
+    
+    # note: this is bit tricky since normally we don't override new
+    # however by doing that we can provide ease to use interface
+    def self.new(stream)
+      OpenVzData.load_from_stream stream
+    end
+    
     # Retruns vm's id used by opennebula
-    def vm_id
-      XPath.first(@xmldoc, "//VMID").cdatas[0].to_s
-    end
-
     def disk
       "/vz/one/datastores/0/#{vm_id}/disk.0"
     end

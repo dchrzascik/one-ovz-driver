@@ -1,5 +1,3 @@
-$: << "#{File.dirname(__FILE__)}"
-
 require 'open_vz_driver'
 require 'openvz'
 require 'test_utils'
