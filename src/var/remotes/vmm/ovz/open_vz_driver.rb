@@ -4,6 +4,12 @@ require 'openvz'
 require 'open_vz_data'
 require 'scripts_common'
 
+class File
+  def self.symlink source, target
+    `sudo ln -s #{source} #{target}`
+  end
+end
+
 module OpenNebula
   class OpenVzDriver
     # Creates new  based on its description file
