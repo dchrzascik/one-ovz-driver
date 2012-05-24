@@ -20,8 +20,6 @@ $: << "#{File.dirname(__FILE__)}"
 $: << "#{File.dirname(__FILE__)}/../../"
 
 require 'open_vz_driver'
-require 'open_vz_data'
-require 'openvz'
 
 open_vz_data = OpenNebula::OpenVzData.new STDIN
 inventory = OpenVZ::Inventory.new

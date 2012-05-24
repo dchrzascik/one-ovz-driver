@@ -30,7 +30,7 @@ module OpenNebula
     
     # Retruns vm's id used by opennebula
     def disk
-      "/vz/one/datastores/0/#{vm_id}/disk.0"
+      "/vz/one/datastores/0/#{@vmid}/disk.0"
     end
 
   end

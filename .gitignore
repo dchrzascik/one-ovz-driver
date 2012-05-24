@@ -1,2 +1,3 @@
 # ignore config - it may be specific to developer
 config
+*disk.0
