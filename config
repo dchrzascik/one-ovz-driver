@@ -1,0 +1,9 @@
+# Configuration
+
+# user@host where remote test are performed
+# note that you may need password, unless you have passwordless ssh access
+DOMAIN = 'user@host'
+
+# directory where remote test are located
+# used when running remote tests or copying sources
+REMOTE_DIR = 'remote-directory'

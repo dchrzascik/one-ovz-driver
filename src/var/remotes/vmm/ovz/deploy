@@ -18,8 +18,6 @@
 
 $: << "#{File.dirname(__FILE__)}"
 $: << "#{File.dirname(__FILE__)}/../../"
-# to be fixed
-$: << "/mnt/ruby-openvz/lib/"
 
 require 'open_vz_driver'
 require 'open_vz_data'

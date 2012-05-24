@@ -3,7 +3,6 @@ $: << "#{File.dirname(__FILE__)}/../../"
 require 'openvz'
 require 'open_vz_data'
 require 'scripts_common'
-require 'sixarm_ruby_magic_number_type'
 
 module OpenNebula
   class OpenVzDriver

@@ -1,13 +1,6 @@
 require 'rake'
 require 'rake/testtask'
-
-# Configuration
-# DOMAIN where remote test are performed
-DOMAIN = 'oneadmin@ovz01'
-# ruby-openvz dir - TODO use it as a gem in future
-RUBY_OPENVZ_DIR = '/mnt/ruby-openvz'
-# directory where remote test are located
-REMOTE_DIR = '/mnt/one-ovz-driver'
+load './config'
 
 task :default => [:test]
 
@@ -15,7 +8,7 @@ def test(t, files)
   t.verbose = true
   t.warning = true
   t.test_files = FileList.new(files)
-  t.libs = %W(lib src/var/remotes/vmm/ovz/ test/var/remotes/vmm/ovz/ #{RUBY_OPENVZ_DIR}/lib)
+  t.libs = %W(lib src/var/remotes/vmm/ovz/ test/var/remotes/vmm/ovz/)
 end
 
 # Ensure that env is correctly set up => there is appropriate ct image
@@ -27,16 +20,17 @@ task :init_test do
 end
 
 # Run only mock-based test on local machine
+# Note that running tests make sense only on openvz-enabled machine
 Rake::TestTask.new(:test) do |t, args|
   test(t, "test/var/remotes/vmm/ovz/*_test.rb")
 end
 task :test => :init_test
 
-# Run only integration tests on local machine
+# Run both integration tests and mock-based on local machine
 Rake::TestTask.new(:test_module) do |t|
   test(t, "test/var/remotes/vmm/ovz/*_test_module.rb")
 end
-task :test_module => :init_test
+task :test_module => [:test]
 
 # Copy whole project to remote directory @ ovz host
 # task may be used when nfs isn't set up
@@ -53,7 +47,7 @@ end
 
 # Install required gems
 task :gems do
-  %w(flexmock systemu xml-mapping).each do |dependency|
+  %w(openvz_one flexmock systemu xml-mapping).each do |dependency|
     sh "gem install #{dependency}"
   end
 end
