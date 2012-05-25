@@ -9,7 +9,7 @@ module OpenNebula
 
     CTID = 100
     DISK = File.absolute_path "test/resources/disk.0"
-    CACHE = "/vz/template/cache/one-#{CTID}.tar"
+    CACHE = "/vz/template/cache/one-#{CTID}.tar.gz"
     def setup
       # mocks
       @container = flexmock("container")
