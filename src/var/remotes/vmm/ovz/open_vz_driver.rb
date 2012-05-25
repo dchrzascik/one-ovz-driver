@@ -22,7 +22,9 @@ module OpenNebula
       create_template template_name, open_vz_data.disk
       
       # pass to vzctl create raw section and ostemplate as options
+      # excluding type - it's meaningfull only to opennebula
       options = open_vz_data.raw
+      options.delete('type')
       options[:ostemplate] = template_name
 
       # create and run container

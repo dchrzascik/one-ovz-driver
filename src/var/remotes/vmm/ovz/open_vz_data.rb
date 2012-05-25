@@ -18,37 +18,36 @@ module OpenNebula
   # OpenVzData
   # class responsible for obtainting container data from deployment_file
   class OpenVzData
-  # RawNode
-  # Helper class used for mapping RAW tag which may contain arbitrary data
-  class RawNode < XML::Mapping::SingleAttributeNode
-    def initialize(*args)
-      path,*args = super(*args)
-      @path = XML::XXPath.new(path + "/*")
-      args
+    # RawNode
+    # Helper class used for mapping RAW tag which may contain arbitrary data
+    class RawNode < XML::Mapping::SingleAttributeNode
+      def initialize(*args)
+        path,*args = super(*args)
+        @path = XML::XXPath.new(path + "/*")
+        args
+      end
+
+      # XML => Ruby mapping only (there is no set_attr_value method)
+      # Converts all nodes to key=>values pairs
+      # except TYPE - it's only meaningful to opennebula
+      def extract_attr_value(xml)
+        raw = {}
+        default_when_xpath_err {
+          @path.each(xml) do |node|
+            raw[node.name] = node.text
+          end
+        }
+        raw
+      end
     end
 
-    # XML => Ruby mapping only (there is no set_attr_value method)
-    # Converts all nodes to key=>values pairs
-    # except TYPE - it's only meaningful to opennebula
-    def extract_attr_value(xml)
-      raw = {}
-      default_when_xpath_err {
-        @path.each(xml) do |node|
-          raw[node.name.downcase] = node.text unless node.name == 'TYPE'
-        end
-      }
-      raw
-    end
-  end
-
-  XML::Mapping.add_node_class RawNode
-    
+    XML::Mapping.add_node_class RawNode
     include XML::Mapping
 
     text_node :name, "NAME"
     text_node :vmid, "VMID"
     raw_node :raw, "RAW"
-    
+
     # note: this is bit tricky since normally we don't override new
     # however by doing that we can provide ease to use interface
     def self.new(stream)

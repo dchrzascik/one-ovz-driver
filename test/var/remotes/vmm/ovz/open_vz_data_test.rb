@@ -11,7 +11,7 @@ module OpenNebula
       data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")
       
       vmid = "49"
-      raw = {'config' => 'basic'}
+      raw = {'config' => 'basic', 'type' => 'ovz'}
       
       assert_equal vmid, data.vmid
       assert_equal "one-#{vmid}", data.name
