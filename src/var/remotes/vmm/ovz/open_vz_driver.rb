@@ -20,12 +20,9 @@ module OpenNebula
       # to enable ovz to find image
       template_name = "one-#{container.ctid}"
       create_template template_name, open_vz_data.disk
-      
-      # pass to vzctl create raw section and ostemplate as options
-      # excluding type - it's meaningfull only to opennebula
-      options = open_vz_data.raw
-      options.delete('type')
-      options[:ostemplate] = template_name
+
+      # options to be passed to vzctl create
+      options = process_options open_vz_data.raw, {:ostemplate => template_name}
 
       # create and run container
       container.create( options )
@@ -96,6 +93,19 @@ module OpenNebula
         bytes = file.read(2)
         return types[bytes]
       end
+    end
+
+    def process_options(raw, options = {})
+      raw = raw.merge(options)
+      
+      # normalize all keys to lowercase
+      new_hash = {}
+      raw.each {|k, v| new_hash.merge!({k.downcase => v})}
+      
+      # filter out type -> it is only meaningful to opennebula
+      new_hash.delete('type')
+
+      new_hash
     end
 
   end
