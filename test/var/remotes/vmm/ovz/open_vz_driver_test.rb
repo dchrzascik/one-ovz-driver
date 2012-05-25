@@ -26,6 +26,7 @@ module OpenNebula
       @container.should_receive(:start).times(1)
 
       @open_vz_data.should_receive(:disk).times(1).and_return(DISK)
+      @open_vz_data.should_receive(:raw).times(1).and_return({})
 
       # assertions
       deploy_ctid = @driver.deploy(@open_vz_data, @container)

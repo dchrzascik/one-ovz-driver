@@ -20,9 +20,13 @@ module OpenNebula
       # to enable ovz to find image
       template_name = "one-#{container.ctid}"
       create_template template_name, open_vz_data.disk
+      
+      # pass to vzctl create raw section and ostemplate as options
+      options = open_vz_data.raw
+      options[:ostemplate] = template_name
 
       # create and run container
-      container.create( :ostemplate => template_name )
+      container.create( options )
       container.start
 
       container.ctid
