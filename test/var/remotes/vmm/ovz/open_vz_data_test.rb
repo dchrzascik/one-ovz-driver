@@ -1,13 +1,20 @@
 require "open_vz_data"
 require "test/unit"
+require 'flexmock/test_unit'
 
 module OpenNebula
   class OpenVzDataTest < Test::Unit::TestCase
+    
+    DATASTORE = '/vz/one/datastores'
+    
     def test_xml_mapping
       data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")
       
-      assert_equal "31", data.vmid
-      assert_equal "one-24", data.name
+      vmid = "49"
+      
+      assert_equal vmid, data.vmid
+      assert_equal "one-#{vmid}", data.name
+      assert_equal "#{DATASTORE}/0/#{vmid}/disk.0", data.disk
     end
 
   end

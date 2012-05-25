@@ -27,10 +27,10 @@ end
 task :test => :init_test
 
 # Run both integration tests and mock-based on local machine
-Rake::TestTask.new(:test_module) do |t|
+Rake::TestTask.new(:test_all) do |t|
   test(t, "test/var/remotes/vmm/ovz/*_test_module.rb")
 end
-task :test_module => [:test]
+task :test_all => [:test]
 
 # Copy whole project to remote directory @ ovz host
 # task may be used when nfs isn't set up

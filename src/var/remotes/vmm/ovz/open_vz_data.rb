@@ -27,10 +27,10 @@ module OpenNebula
     def self.new(stream)
       OpenVzData.load_from_stream stream
     end
-    
-    # Retruns vm's id used by opennebula
+
+    # Retruns ct disk
     def disk
-      "/vz/one/datastores/0/#{@vmid}/disk.0"
+      "/vz/one/datastores/0/#{vmid}/disk.0"
     end
 
   end

@@ -7,3 +7,4 @@ DOMAIN = 'user@host'
 # directory where remote test are located
 # used when running remote tests or copying sources
 REMOTE_DIR = 'remote-directory'
+

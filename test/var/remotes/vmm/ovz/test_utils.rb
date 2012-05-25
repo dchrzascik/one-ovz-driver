@@ -5,7 +5,7 @@ module OpenNebula
     def self.purge_ct(deploy_ctid)
       if File.directory? "/vz/private/#{deploy_ctid}"
         p "Deleting container: #{deploy_ctid}"
-        `sh sudo vzctl stop #{deploy_ctid} && sudo vzctl delete #{deploy_ctid}`
+        `sudo vzctl stop #{deploy_ctid} && sudo vzctl delete #{deploy_ctid}`
       end
     end
 
