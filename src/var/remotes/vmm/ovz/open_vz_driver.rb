@@ -3,7 +3,6 @@ $: << "#{File.dirname(__FILE__)}/../../"
 require 'openvz'
 require 'open_vz_data'
 require 'scripts_common'
-require 'sixarm_ruby_magic_number_type'
 
 class File
   def self.symlink source, target
@@ -78,13 +77,19 @@ module OpenNebula
     private
 
     def create_template(template_name, disk_file)
-      disk_file_type = template_type( File.magic_number_type disk_file )
+      disk_file_type = template_type disk_file
       template_file = File.join("/", "vz", "template", "cache", "#{template_name}.#{disk_file_type}")
       File.symlink disk_file, template_file
     end
-    
-    def template_type(file_type)
-		{:gzip => 'tar.gz'}[file_type]
+
+    def template_type(file_name)
+      # compression type is determined by 2 bytes representing 'magic number'
+      types = {"\x1F\x8B" => 'tar.gz', "BZ" => 'tar.bz2', "\xFD\x00" => 'tar.xz'}
+
+      File.open(file_name, "r") do |file|
+        bytes = file.read(2)
+        return types[bytes]
+      end
     end
 
   end
