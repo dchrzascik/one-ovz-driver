@@ -39,8 +39,8 @@ used_memory=$(($total_memory - $free_memory))
 # NETWORK
 if [ -f /proc/net/dev ]; then
   net_info=`cat /proc/net/dev`
-  netrx=$(echo "$net_info"|grep eth0|cut -d: -f2|awk {'print $1'})
-  nettx=$(echo "$net_info"|grep eth0|cut -d: -f2|awk {'print $9'})
+  netrx=$(echo "$net_info"|grep eth[0-9]|cut -d: -f2|awk {'print $1'})
+  nettx=$(echo "$net_info"|grep eth[0-9]|cut -d: -f2|awk {'print $9'})
 fi
 
 # Print output
