@@ -50,14 +50,15 @@ module OpenNebula
     end
 
     def test_filter_executable_files
-      files = %w(/root/sample_cd.iso /home/radek/wallpaper.jpg /usr/local/executable.sh /tmp/yaexecutable.ksh)
+      files = '/root/sample_cd.iso /home/radek/wallpaper.jpg /usr/local/executable.sh /tmp/yaexecutable.ksh'
       expected_files = %w(/usr/local/executable.sh /tmp/yaexecutable.ksh)
 
       assert_equal expected_files, OpenVzDriver.filter_executable_files(files)
 
       assert OpenVzDriver.filter_executable_files(nil) == []
       assert OpenVzDriver.filter_executable_files([]) == []
-      assert OpenVzDriver.filter_executable_files(%w(/home/image.jpg)) == []
+      assert OpenVzDriver.filter_executable_files('') == []
+      assert OpenVzDriver.filter_executable_files('/home/image.jpg') == []
     end
 
   end

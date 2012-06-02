@@ -91,11 +91,11 @@ module OpenNebula
     #  An utility used to filter executable filenames
     #
     # * *Args*    :
-    #   - +files+ -> Array containing filenames
+    #   - +files+ -> String containing filenames separated by whitespaces
     # * *Returns* :
     #   - Filtered array containing only executable filenames. If none of the filenames matches, the empty array is returned
     def self.filter_executable_files(files)
-      if files.nil?
+      if files.nil? or files.empty?
         []
       else
         files.split.find_all {|f| CTX_EXEC_EXT.find {|e| e == File.extname(f) } != nil }
