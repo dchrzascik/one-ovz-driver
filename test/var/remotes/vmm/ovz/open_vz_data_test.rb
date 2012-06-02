@@ -9,14 +9,29 @@ module OpenNebula
     
     def test_xml_mapping
       data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")
-      
+
+
       vmid = "49"
       raw = {'CONFIG' => 'basic', 'TYPE' => 'ovz'}
+
+      # context section variables
+      files = %w(/srv/cloud/one/context/init.sh /srv/cloud/one/context/katalog/plik)
+      hostname = 'MAINHOST'
+      ip_private = '192.168.0.106'
+      target = 'hdb'
+
       
       assert_equal vmid, data.vmid
       assert_equal "one-#{vmid}", data.name
       assert_equal "#{DATASTORE}/0/#{vmid}/disk.0", data.disk
       assert_equal raw, data.raw
+
+      # context section vars assertions
+      assert_equal files, data.context.files.split
+      assert_equal hostname, data.context.hostname
+      assert_equal ip_private, data.context.ip_private
+      assert_equal target, data.context.target
+
     end
 
   end

@@ -7,7 +7,8 @@ require 'flexmock/test_unit'
 module OpenNebula
   class OpenVzDriverTest < Test::Unit::TestCase
 
-    CTID = 100
+    ONE_VMID = 69
+    CTID = 1001
     DISK = File.absolute_path "test/resources/disk.0"
     CACHE = "/vz/template/cache/one-#{CTID}.tar.gz"
     def setup
@@ -27,6 +28,8 @@ module OpenNebula
 
       @open_vz_data.should_receive(:disk).times(1).and_return(DISK)
       @open_vz_data.should_receive(:raw).times(1).and_return({})
+      @open_vz_data.should_receive(:context).times(1).and_return(OpenVzData::ContextNode.new())
+      @open_vz_data.should_receive(:vmid).times(1).and_return(ONE_VMID)
 
       # assertions
       deploy_ctid = @driver.deploy(@open_vz_data, @container)
@@ -44,6 +47,17 @@ module OpenNebula
       %w(100 101 103).each do |id|
         assert_equal id, OpenVzDriver.ctid(@inventory)
       end
+    end
+
+    def test_filter_executable_files
+      files = %w(/root/sample_cd.iso /home/radek/wallpaper.jpg /usr/local/executable.sh /tmp/yaexecutable.ksh)
+      expected_files = %w(/usr/local/executable.sh /tmp/yaexecutable.ksh)
+
+      assert_equal expected_files, OpenVzDriver.filter_executable_files(files)
+
+      assert OpenVzDriver.filter_executable_files(nil) == []
+      assert OpenVzDriver.filter_executable_files([]) == []
+      assert OpenVzDriver.filter_executable_files(%w(/home/image.jpg)) == []
     end
 
   end
