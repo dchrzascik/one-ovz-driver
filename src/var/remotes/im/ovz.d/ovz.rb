@@ -21,43 +21,38 @@ def print_info(name, value)
     puts "#{name}=#{value}"
 end
 
-#CPU
-
-
 # CPU
 
 cpuinfo=`cat /proc/cpuinfo`
 exit(-1) if $?.exitstatus != 0
 
-#ncpus=$(echo "$cpuinfo"|grep processor|wc -l)
-#total_cpu=$(($ncpus*100))
-#cpu_speed=$(echo "$cpuinfo"|grep "cpu MHz"|sort -u|sed s/[^0-9.]//g)
-#cpu_speed=`printf "%.2f" $cpu_speed`
-#free_cpu=`top -bin1| grep "Cpu"|cut -d ',' -f4|sed s/[^0-9.]//g`
-#free_cpu=`echo "$free_cpu*$ncpus"|bc`
-#used_cpu=`echo "$total_cpu - $free_cpu"|bc`
-#used_cpu=`printf "%.2f" $used_cpu`
+# how many virtual processors are they?
+# each processor in this file appear as a single line in a format: processor: processor_id
+$ncpus = cpuinfo.grep(/processor/).count
+$total_cpu=$ncpus*100
 
+# cpu speed - is always equal for each core, so read the first one
+$cpu_speed = cpuinfo.grep(/cpu MHz/).to_s().split(":")[1]
 
-#top_text=`top -bin1`
-#exit(-1) if $?.exitstatus != 0
+top_text=`top -bin1`
+exit(-1) if $?.exitstatus != 0
 
-#top_text.gsub!(/^top.*^top.*?$/m, "") # Strip first top output
+top_text.gsub!(/^top.*^top.*?$/m, "") # Strip first top output
 
-#top_text.split(/\n/).each{|line|
-#    if line.match('^%?Cpu')
-#        line[7..-1].split(",").each{|elemento|
-#            temp = elemento.strip.split(/[% ]/)
-#            if temp[1]=="id"
-#            idle = temp[0]
-#            $free_cpu = idle.to_f * $total_cpu.to_f / 100
-#            $used_cpu = $total_cpu.to_f - $free_cpu
-#                break
-#            end
-#
-#        }
-#    end
-#}
+top_text.split(/\n/).each{|line|
+    if line.match('^%?Cpu')
+        line[7..-1].split(",").each{|elemento|
+            temp = elemento.strip.split(/[% ]/)
+            if temp[1]=="id"
+            idle = temp[0]
+            $free_cpu = idle.to_f * $total_cpu.to_f / 100
+            $used_cpu = $total_cpu.to_f - $free_cpu
+                break
+            end
+
+        }
+    end
+}
 
 $total_memory = `free -k|grep "Mem:" | awk '{print $2}'`
 tmp=`free -k|grep "buffers\/cache"|awk '{print $3 " " $4}'`.split
@@ -99,6 +94,8 @@ print_info("FREEMEMORY",$free_memory)
 
 print_info("FREECPU",$free_cpu)
 print_info("USEDCPU",$used_cpu)
+
+print_info("CPUSPEED",$cpu_speed)
 
 print_info("NETRX",$netrx)
 print_info("NETTX",$nettx)
