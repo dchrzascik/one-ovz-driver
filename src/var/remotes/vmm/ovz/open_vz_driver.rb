@@ -36,6 +36,7 @@ module OpenNebula
       container.create( options )
       container.start
 
+      # and contextualise it
       contextualise container, open_vz_data.vmid, open_vz_data.context
 
       container.ctid
@@ -147,19 +148,32 @@ module OpenNebula
 
       OpenNebula.log_debug "Applying contextualisation"
 
-      # TODO Error handling when invoking system commands
-      container.command "mkdir #{CTX_ISO_MNT_DIR}"
-      OpenVZ::Util.execute "sudo mount /vz/one/datastores/0/#{one_vmid}/disk.2.iso /vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR} -o loop"
-      container.command ". #{CTX_ISO_MNT_DIR}/context.sh"
+      begin
+        ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
 
-      files = OpenVzDriver.filter_executable_files context.files
-      files.each do |abs_fname|
-        fname = File.basename abs_fname
-        container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
+        # mount the iso file and source contex.sh
+        container.command "mkdir #{CTX_ISO_MNT_DIR}"
+        OpenVZ::Util.execute "sudo mount /vz/one/datastores/0/#{one_vmid}/disk.2.iso #{ctx_mnt_dir} -o loop"
+        container.command ". #{CTX_ISO_MNT_DIR}/context.sh"
+
+        # run all executable files
+        files = OpenVzDriver.filter_executable_files context.files
+        files.each do |abs_fname|
+          fname = File.basename abs_fname
+          container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
+        end
+
+        # cleanup
+        OpenVZ::Util.execute "sudo umount #{ctx_mnt_dir}"
+        container.command "rmdir #{CTX_ISO_MNT_DIR}"
+
+      rescue => e
+        OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
+
+        # cleanup
+        OpenVZ::Util.execute "if [ `mountpoint #{ctx_mnt_dir} && echo $?` -eq 0 ]; then sudo umount #{ctx_mnt_dir}; fi"
+        container.command "rmdir #{CTX_ISO_MNT_DIR}"
       end
-
-      OpenVZ::Util.execute "sudo umount /vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
-      container.command "rmdir #{CTX_ISO_MNT_DIR}"
     end
 
   end
