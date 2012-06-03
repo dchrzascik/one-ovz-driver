@@ -61,7 +61,7 @@ module OpenNebula
     text_node :name, 'NAME'
     text_node :vmid, 'VMID'
     raw_node :raw, 'RAW'
-    object_node :context, 'CONTEXT', :class => ContextNode
+    object_node :context, 'CONTEXT', :class => ContextNode, :default_value => nil
 
     # note: this is bit tricky since normally we don't override new
     # however by doing that we can provide ease to use interface

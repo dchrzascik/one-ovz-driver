@@ -15,7 +15,7 @@ module OpenNebula
       raw = {'CONFIG' => 'basic', 'TYPE' => 'ovz'}
 
       # context section variables
-      files = %w(/srv/cloud/one/context/init.sh /srv/cloud/one/context/katalog/plik)
+      files = %w(/srv/cloud/one/context/test.sh /srv/cloud/one/context/katalog/plik)
       hostname = 'MAINHOST'
       ip_private = '192.168.0.106'
       target = 'hdb'
