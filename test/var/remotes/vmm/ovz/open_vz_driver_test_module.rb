@@ -13,7 +13,7 @@ module OpenNebula
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
     end
-    
+=begin
     def test_deploy
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
@@ -62,7 +62,7 @@ module OpenNebula
     ensure
       OpenVzDriverTestModule.cleanup deploy_ctid
     end
-
+=end
     def test_shutdown
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
@@ -79,7 +79,7 @@ module OpenNebula
       @driver.shutdown container
       
       # assert
-      assert_equal "CTID #{ctid} exist unmounted down", `vzctl status #{ctid}`.strip!
+      assert_match(/exist.*down/, `vzctl status #{ctid}`.strip!)
     ensure
       OpenVzDriverTestModule.cleanup deploy_ctid
     end
@@ -89,12 +89,32 @@ module OpenNebula
       ctid = OpenVzDriver.ctid @inventory
       container = OpenVZ::Container.new(ctid)
 
-      OpenVzDriverTestModule.mock_tmm
-      
       # assert that shutdown will propagate ContainerError
       assert_raises OpenVzDriver::OpenVzDriverException do
         @driver.shutdown container  
       end
+    end
+    
+    def test_cancel
+      # init
+      @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
+      ctid = OpenVzDriver.ctid @inventory
+      container = OpenVZ::Container.new(ctid)
+      # mock container's disk path
+      @open_vz_data = flexmock(@open_vz_data)
+      @open_vz_data.should_receive(:disk).times(1).and_return(DISK)
+
+      OpenVzDriverTestModule.mock_tmm
+      
+      # deploy & stop
+      deploy_ctid = @driver.deploy @open_vz_data, container
+      @driver.cancel container
+      
+      # assert
+      assert_match(/deleted/, `vzctl status #{ctid}`.strip!)
+      assert_equal false, File.exists?("/vz/template/cache/one-#{container.ctid}.tar.gz")
+    ensure
+      OpenVzDriverTestModule.cleanup deploy_ctid
     end
 
     def self.cleanup(deploy_ctid)

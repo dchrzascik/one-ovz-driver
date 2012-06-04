@@ -6,7 +6,7 @@ require 'scripts_common'
 
 class File
   def self.symlink source, target
-    `sudo ln -s #{source} #{target}`
+    OpenNebula.exec_and_log "sudo ln -s #{source} #{target}"
   end
 end
 
@@ -48,13 +48,19 @@ module OpenNebula
     # Sends shutdown signal to a VM
     def shutdown(container)
       container.stop
+      template_name = "one-#{container.ctid}"
+      template_cache = Dir.glob("/vz/template/cache/#{template_name}.*").first
+      OpenNebula.exec_and_log "sudo rm -rf #{template_cache}"
     rescue RuntimeError => e
       raise OpenVzDriverException, "Container can't be stopped. Details: #{e.message}"
     end
 
     # Destroys a Vm
     def cancel(container)
-      OpenNebula.log_error("Not yet implemented")
+      self.shutdown container
+      container.destroy
+    rescue RuntimeError => e
+      raise OpenVzDriverException, "Container can't be canceled. Details: #{e.message}"
     end
 
     # Saves the state of a Vm
