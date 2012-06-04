@@ -6,12 +6,15 @@ require 'scripts_common'
 
 class File
   def self.symlink source, target
-    `sudo ln -s #{source} #{target}`
+    OpenNebula.exec_and_log "sudo ln -s #{source} #{target}"
   end
 end
 
 module OpenNebula
   class OpenVzDriver
+
+    # OpenVzDriver exception class
+    class OpenVzDriverException < StandardError; end
 
     # a directory where the context iso img is mounted
     CTX_ISO_MNT_DIR = '/mnt/isotmp'
@@ -43,13 +46,21 @@ module OpenNebula
     end
 
     # Sends shutdown signal to a VM
-    def shutdown()
-      OpenNebula.log_error("Not yet implemented")
+    def shutdown(container)
+      container.stop
+      template_name = "one-#{container.ctid}"
+      template_cache = Dir.glob("/vz/template/cache/#{template_name}.*").first
+      OpenNebula.exec_and_log "sudo rm -rf #{template_cache}"
+    rescue RuntimeError => e
+      raise OpenVzDriverException, "Container can't be stopped. Details: #{e.message}"
     end
 
     # Destroys a Vm
-    def cancel(deploy_id)
-      OpenNebula.log_error("Not yet implemented")
+    def cancel(container)
+      self.shutdown container
+      container.destroy
+    rescue RuntimeError => e
+      raise OpenVzDriverException, "Container can't be canceled. Details: #{e.message}"
     end
 
     # Saves the state of a Vm
@@ -72,17 +83,25 @@ module OpenNebula
       OpenNebula.log_error("Not yet implemented")
     end
 
-    # Get the lowest available ctid (no smaller than 100 - these ids are special)
+    # Get the ctid.
+    # It's equal to vmid + offset. If there is already such id, then the nearest one is taken
+    #
     # @param reference to inventory which holds data
     # @return ctid (string)
-    def self.ctid(inventory)
+    def self.ctid(inventory, vmid, offset = 690)
       # we internally operate on ints
       ct_ids = inventory.ids.map { |e| e.to_i  }
-      ct_ids = ct_ids.find_all{|x| x >= 100 }
+      proposed = vmid.to_i
+      
+      # attempty to return propsed id
+      proposed += offset
+      return proposed.to_s unless ct_ids.include? proposed
+      # if that id is already taken chose the closest one to avoid conflict 
+      ct_ids = ct_ids.find_all{|x| x >= proposed }
 
       # return string since ruby-openvz takes for granted that id is a string
       # note that ct_ids are assumed to be sorted in ascending order
-      ct_ids.inject(100) do |mem, var|
+      ct_ids.inject(proposed) do |mem, var|
         break mem unless mem == var
         mem += 1
       end.to_s
@@ -116,9 +135,10 @@ module OpenNebula
 
       File.open(file_name, "r") do |file|
         bytes = file.read(2)
-        # TODO what is returned when the type is not recognized?
         return types[bytes]
       end
+      
+      raise "Cannot determine filetype of #{file_name}"
     end
 
     def process_options(raw, options = {})
@@ -148,34 +168,32 @@ module OpenNebula
 
       OpenNebula.log_debug "Applying contextualisation"
 
-      begin
-        ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
+      ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
+      iso_file = Dir.glob("/vz/one/datastores/0/#{one_vmid}/*.iso").first
 
-        # mount the iso file and source contex.sh
-        container.command "mkdir #{CTX_ISO_MNT_DIR}"
-        OpenVZ::Util.execute "sudo mount /vz/one/datastores/0/#{one_vmid}/disk.2.iso #{ctx_mnt_dir} -o loop"
-        container.command ". #{CTX_ISO_MNT_DIR}/context.sh"
+      # mount the iso file
+      container.command "mkdir #{CTX_ISO_MNT_DIR}"
+      OpenVZ::Util.execute "sudo mount #{iso_file} #{ctx_mnt_dir} -o loop"
 
-        # run all executable files
-        files = OpenVzDriver.filter_executable_files context.files
-        files.each do |abs_fname|
-          fname = File.basename abs_fname
-          container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
-        end
-
-        # cleanup
-        OpenVZ::Util.execute "sudo umount #{ctx_mnt_dir}"
-        container.command "rmdir #{CTX_ISO_MNT_DIR}"
-
-      rescue => e
-        OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
-
-        # cleanup
-        OpenVZ::Util.execute "if [ `mountpoint #{ctx_mnt_dir} && echo $?` -eq 0 ]; then sudo umount #{ctx_mnt_dir}; fi"
-        container.command "rmdir #{CTX_ISO_MNT_DIR}"
+      # run all executable files. It's up to them whether they use context.sh or not
+      files = OpenVzDriver.filter_executable_files context.files
+      files.each do |abs_fname|
+        fname = File.basename abs_fname
+        container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
       end
-    end
 
+    rescue => e
+      OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
+      # reraise the exception
+      raise OpenVzDriverException, "Exception while performing contextualisation: #{e.message}"
+
+    ensure
+      # cleanup
+      OpenVZ::Util.execute "sudo mountpoint #{ctx_mnt_dir}; if [ $? -eq 0 ]; then " \
+                            " sudo umount #{ctx_mnt_dir};" \
+                            " sudo rmdir #{ctx_mnt_dir};" \
+                            " fi"
+    end
   end
 end
 

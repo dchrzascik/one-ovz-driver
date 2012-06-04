@@ -21,15 +21,15 @@ $: << "#{File.dirname(__FILE__)}/../../"
 
 require 'open_vz_driver'
 
-open_vz_data = OpenNebula::OpenVzData.new STDIN
-inventory = OpenVZ::Inventory.new
 driver = OpenNebula::OpenVzDriver.new
 
 # setup container
-ctid = OpenNebula::OpenVzDriver.ctid inventory, open_vz_data.vmid
+ctid = ARGV[0]
 container = OpenVZ::Container.new(ctid)
 
 # final step
-deploy_ctid = driver.deploy open_vz_data, container
-
-p deploy_ctid
+begin
+  driver.cancel container
+rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
+  p e.message
+end
