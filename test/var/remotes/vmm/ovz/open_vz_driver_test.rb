@@ -51,11 +51,12 @@ module OpenNebula
 
     # verify that lowest available ve_id is used
     def test_ctid
-      @inventory.should_receive(:ids).times(3).and_return([24], [100, 102], [100, 101, 102])
+      @inventory.should_receive(:ids).times(3).and_return([680, 691, 693, 694])
+      proposed = {'0' => '690', '1' => '692', '2' => '692'}
 
       # assertions
-      %w(100 101 103).each do |id|
-        assert_equal id, OpenVzDriver.ctid(@inventory)
+      proposed.each_pair do |vmid, ctid|
+        assert_equal ctid, OpenVzDriver.ctid(@inventory, vmid)
       end
     end
 

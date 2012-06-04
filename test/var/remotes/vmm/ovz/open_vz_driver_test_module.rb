@@ -13,11 +13,11 @@ module OpenNebula
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
     end
-=begin
+
     def test_deploy
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
-      ctid = OpenVzDriver.ctid @inventory
+      ctid = OpenVzDriver.ctid @inventory, ONE_VMID.to_s, 0
       container = OpenVZ::Container.new(ctid)
       # mock container's disk path
       @open_vz_data = flexmock(@open_vz_data)
@@ -40,7 +40,7 @@ module OpenNebula
     def test_deploy_with_ctx
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")
-      ctid = OpenVzDriver.ctid @inventory
+      ctid = OpenVzDriver.ctid @inventory, ONE_VMID.to_s, 0
       container = OpenVZ::Container.new(ctid)
       # mock container's disk path
       @open_vz_data = flexmock(@open_vz_data)
@@ -62,11 +62,11 @@ module OpenNebula
     ensure
       OpenVzDriverTestModule.cleanup deploy_ctid
     end
-=end
+
     def test_shutdown
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
-      ctid = OpenVzDriver.ctid @inventory
+      ctid = OpenVzDriver.ctid @inventory, ONE_VMID.to_s, 0
       container = OpenVZ::Container.new(ctid)
       # mock container's disk path
       @open_vz_data = flexmock(@open_vz_data)
@@ -86,7 +86,7 @@ module OpenNebula
 
     def test_shutdown_not_exist
       # init
-      ctid = OpenVzDriver.ctid @inventory
+      ctid = OpenVzDriver.ctid @inventory, ONE_VMID.to_s, 0
       container = OpenVZ::Container.new(ctid)
 
       # assert that shutdown will propagate ContainerError
@@ -98,7 +98,7 @@ module OpenNebula
     def test_cancel
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
-      ctid = OpenVzDriver.ctid @inventory
+      ctid = OpenVzDriver.ctid @inventory, ONE_VMID.to_s, 0
       container = OpenVZ::Container.new(ctid)
       # mock container's disk path
       @open_vz_data = flexmock(@open_vz_data)

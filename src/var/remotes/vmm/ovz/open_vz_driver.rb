@@ -83,17 +83,25 @@ module OpenNebula
       OpenNebula.log_error("Not yet implemented")
     end
 
-    # Get the lowest available ctid (no smaller than 100 - these ids are special)
+    # Get the ctid.
+    # It's equal to vmid + offset. If there is already such id, then the nearest one is taken
+    #
     # @param reference to inventory which holds data
     # @return ctid (string)
-    def self.ctid(inventory)
+    def self.ctid(inventory, vmid, offset = 690)
       # we internally operate on ints
       ct_ids = inventory.ids.map { |e| e.to_i  }
-      ct_ids = ct_ids.find_all{|x| x >= 100 }
+      proposed = vmid.to_i
+      
+      # attempty to return propsed id
+      proposed += offset
+      return proposed.to_s unless ct_ids.include? proposed
+      # if that id is already taken chose the closest one to avoid conflict 
+      ct_ids = ct_ids.find_all{|x| x >= proposed }
 
       # return string since ruby-openvz takes for granted that id is a string
       # note that ct_ids are assumed to be sorted in ascending order
-      ct_ids.inject(100) do |mem, var|
+      ct_ids.inject(proposed) do |mem, var|
         break mem unless mem == var
         mem += 1
       end.to_s

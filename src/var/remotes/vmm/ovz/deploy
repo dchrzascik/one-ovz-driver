@@ -26,7 +26,7 @@ inventory = OpenVZ::Inventory.new
 driver = OpenNebula::OpenVzDriver.new
 
 # setup container
-ctid = OpenNebula::OpenVzDriver.ctid inventory
+ctid = OpenNebula::OpenVzDriver.ctid inventory, open_vz_data.vmid
 container = OpenVZ::Container.new(ctid)
 
 # final step
