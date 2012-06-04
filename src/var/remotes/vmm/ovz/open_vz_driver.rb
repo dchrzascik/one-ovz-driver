@@ -13,6 +13,9 @@ end
 module OpenNebula
   class OpenVzDriver
 
+    # OpenVzDriver exception class
+    class OpenVzDriverException < StandardError; end
+
     # a directory where the context iso img is mounted
     CTX_ISO_MNT_DIR = '/mnt/isotmp'
 
@@ -148,34 +151,32 @@ module OpenNebula
 
       OpenNebula.log_debug "Applying contextualisation"
 
-      begin
-        ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
+      ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
+      iso_file = Dir.glob("/vz/one/datastores/0/#{one_vmid}/*.iso").first
 
-        # mount the iso file and source contex.sh
-        container.command "mkdir #{CTX_ISO_MNT_DIR}"
-        OpenVZ::Util.execute "sudo mount /vz/one/datastores/0/#{one_vmid}/disk.2.iso #{ctx_mnt_dir} -o loop"
-        container.command ". #{CTX_ISO_MNT_DIR}/context.sh"
+      # mount the iso file
+      container.command "mkdir #{CTX_ISO_MNT_DIR}"
+      OpenVZ::Util.execute "sudo mount #{iso_file} #{ctx_mnt_dir} -o loop"
 
-        # run all executable files
-        files = OpenVzDriver.filter_executable_files context.files
-        files.each do |abs_fname|
-          fname = File.basename abs_fname
-          container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
-        end
-
-        # cleanup
-        OpenVZ::Util.execute "sudo umount #{ctx_mnt_dir}"
-        container.command "rmdir #{CTX_ISO_MNT_DIR}"
-
-      rescue => e
-        OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
-
-        # cleanup
-        OpenVZ::Util.execute "if [ `mountpoint #{ctx_mnt_dir} && echo $?` -eq 0 ]; then sudo umount #{ctx_mnt_dir}; fi"
-        container.command "rmdir #{CTX_ISO_MNT_DIR}"
+      # run all executable files. It's up to them whether they use context.sh or not
+      files = OpenVzDriver.filter_executable_files context.files
+      files.each do |abs_fname|
+        fname = File.basename abs_fname
+        container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
       end
-    end
 
+    rescue => e
+      OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
+      # reraise the exception
+      raise OpenVzDriverException, "Exception while performing contextualisation: #{e.message}"
+
+    ensure
+      # cleanup
+      OpenVZ::Util.execute "sudo mountpoint #{ctx_mnt_dir}; if [ $? -eq 0 ]; then " \
+                            " sudo umount #{ctx_mnt_dir};" \
+                            " sudo rmdir #{ctx_mnt_dir};" \
+                            " fi"
+    end
   end
 end
 

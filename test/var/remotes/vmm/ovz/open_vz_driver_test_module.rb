@@ -51,8 +51,11 @@ module OpenNebula
       # deploy
       deploy_ctid = @driver.deploy @open_vz_data, container
 
-      # assert
+      # ctx assertions
       assert @open_vz_data.context != nil
+      assert "tst\n" == container.command('cat /tmp/tst')
+
+      # deployment assertions
       assert_equal ctid, deploy_ctid
       # this assertion works if the test is executed as a root user
       assert_equal true, File.directory?("/vz/private/#{deploy_ctid}")
