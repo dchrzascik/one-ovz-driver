@@ -36,7 +36,7 @@ module OpenNebula
       container.create( options )
       container.start
 
-      # TODO when execute ctx files? add them to rc.local or run after booting?
+      # and contextualise it
       contextualise container, open_vz_data.vmid, open_vz_data.context
 
       container.ctid
@@ -100,7 +100,6 @@ module OpenNebula
       else
         files.split.find_all {|f| CTX_EXEC_EXT.find {|e| e == File.extname(f) } != nil }
       end
-
     end
 
     private
@@ -117,6 +116,7 @@ module OpenNebula
 
       File.open(file_name, "r") do |file|
         bytes = file.read(2)
+        # TODO what is returned when the type is not recognized?
         return types[bytes]
       end
     end
@@ -140,25 +140,38 @@ module OpenNebula
     #   - +container+ -> The container to contextualise. An instance of OpenVZ::Container class
     #   - +one_vmid+ -> ID set by nebula
     #   - +context+ -> Context parameters. An instance of OpenVzData::ContextNode class
-    # * *Returns* :
-    #   - void
     def contextualise(container, one_vmid, context)
+      if context.nil?
+        OpenNebula.log_debug "No context provided"
+        return
+      end
 
-      # TODO Error handling when invoking system commands
-      # TODO Fix datastore localization - /datastores/0 ??
+      OpenNebula.log_debug "Applying contextualisation"
 
-      files = OpenVzDriver.filter_executable_files context.files
+      begin
+        ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
 
-      if files.length > 0
+        # mount the iso file and source contex.sh
         container.command "mkdir #{CTX_ISO_MNT_DIR}"
-        OpenVZ::Util.execute "sudo mount /vz/one/datastores/0/#{one_vmid}/disk.2.iso /vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR} -o loop"
+        OpenVZ::Util.execute "sudo mount /vz/one/datastores/0/#{one_vmid}/disk.2.iso #{ctx_mnt_dir} -o loop"
+        container.command ". #{CTX_ISO_MNT_DIR}/context.sh"
 
+        # run all executable files
+        files = OpenVzDriver.filter_executable_files context.files
         files.each do |abs_fname|
           fname = File.basename abs_fname
           container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
         end
 
-        OpenVZ::Util.execute "sudo umount /vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
+        # cleanup
+        OpenVZ::Util.execute "sudo umount #{ctx_mnt_dir}"
+        container.command "rmdir #{CTX_ISO_MNT_DIR}"
+
+      rescue => e
+        OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
+
+        # cleanup
+        OpenVZ::Util.execute "if [ `mountpoint #{ctx_mnt_dir} && echo $?` -eq 0 ]; then sudo umount #{ctx_mnt_dir}; fi"
         container.command "rmdir #{CTX_ISO_MNT_DIR}"
       end
     end
