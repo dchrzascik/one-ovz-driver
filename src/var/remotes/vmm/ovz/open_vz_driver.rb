@@ -46,12 +46,14 @@ module OpenNebula
     end
 
     # Sends shutdown signal to a VM
-    def shutdown()
-      OpenNebula.log_error("Not yet implemented")
+    def shutdown(container)
+      container.stop
+    rescue RuntimeError => e
+      raise OpenVzDriverException, "Container can't be stopped. Details: #{e.message}"
     end
 
     # Destroys a Vm
-    def cancel(deploy_id)
+    def cancel(container)
       OpenNebula.log_error("Not yet implemented")
     end
 
