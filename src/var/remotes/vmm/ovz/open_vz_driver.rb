@@ -121,9 +121,10 @@ module OpenNebula
 
       File.open(file_name, "r") do |file|
         bytes = file.read(2)
-        # TODO what is returned when the type is not recognized?
         return types[bytes]
       end
+      
+      raise "Cannot determine filetype of #{file_name}"
     end
 
     def process_options(raw, options = {})
