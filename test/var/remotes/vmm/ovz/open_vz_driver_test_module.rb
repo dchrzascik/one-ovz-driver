@@ -37,6 +37,32 @@ module OpenNebula
       OpenVzDriverTestModule.cleanup deploy_ctid
     end
 
+    def test_poll
+      # init
+      @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
+      ctid = '49' #OpenVzDriver.ctid @inventory, ONE_VMID.to_s, 0
+      container = OpenVZ::Container.new(ctid)
+      # mock container's disk path
+      @open_vz_data = flexmock(@open_vz_data)
+      @open_vz_data.should_receive(:disk).times(1).and_return(DISK)
+
+      OpenVzDriverTestModule.mock_tmm
+      
+      # deploy
+      @driver.deploy @open_vz_data, container
+      
+      # assert
+      poll = @driver.poll container
+      
+      p "Hash: #{poll}"
+      
+      assert_equal true, (%(- a p e d).include? poll[:STATE])
+      assert_equal 5, poll.size
+    ensure
+      OpenVzDriverTestModule.cleanup ctid
+    end
+
+
     def test_deploy_with_ctx
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")

@@ -79,8 +79,42 @@ module OpenNebula
     end
 
     # Gets information about a VM
-    def poll(deploy_id)
-      OpenNebula.log_error("Not yet implemented")
+    def poll(container)
+      info = {}
+      
+      # state, TODO handle all cases
+      states = {'exist' =>  'a', 'deleted' => 'd'}
+      states.default = '-'
+      info[:STATE] = states[container.status[0]]
+      
+      # cpu TODO handle case when there are more than one cpu
+      out = (container.command "ps axo pcpu").split(/\n/)
+      out = out.drop 1
+      info[:USEDCPU] = 0
+      out.each do |line|
+        line.strip!
+        info[:USEDCPU] += line.to_i
+      end
+      
+      # net
+      out = container.command "cat /proc/net/dev"
+      out.split(/\n/).each do |line|
+          if line =~ /^\s*venet[^\s]*\s+(.+)/
+              fields = $1.split(/\s+/)
+              info[:NETRX] = fields[0].to_i
+              info[:NETTX] = fields[8].to_i
+          end
+      end
+
+      # computer container memory usage
+      out = container.command  "free -k"
+      out.split(/\n/).each do |line|
+          if line =~ /^Mem:\s+\d+\s+(\d+)/
+              info[:USEDMEMORY] = $1.to_i
+          end
+      end
+           
+      info
     end
 
     # Get the ctid.
