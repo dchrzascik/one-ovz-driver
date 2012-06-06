@@ -90,40 +90,41 @@ module OpenNebula
     # * *Args* :
     # - +container+ -> reference to container. An instance of OpenVZ::Container class
     def poll(container)
-      info = {}
+      info = Hash.new 0
       
-      # state, TODO handle all cases
-      states = {'exist' =>  'a', 'deleted' => 'd'}
+      # state
+      states = {'exist' =>  'a', 'deleted' => 'd', 'suspended' => 'p'}
       states.default = '-'
-      info[:STATE] = states[container.status[0]]
+      status = container.status
+      # state can be either active or deleted
+      info[:state] = states[status[0]]
+      # however if there is additional status field then it may be also suspended (see vzctl status comamnd)
+      info[:state] = states[status[3]] if status.size == 4
       
-      # cpu TODO handle case when there are more than one cpu
-      out = (container.command "ps axo pcpu").split(/\n/)
-      out = out.drop 1
-      info[:USEDCPU] = 0
-      out.each do |line|
-        line.strip!
-        info[:USEDCPU] += line.to_i
-      end
-      
-      # net
-      out = container.command "cat /proc/net/dev"
-      out.split(/\n/).each do |line|
-          if line =~ /^\s*venet[^\s]*\s+(.+)/
-              fields = $1.split(/\s+/)
-              info[:NETRX] = fields[0].to_i
-              info[:NETTX] = fields[8].to_i
-          end
-      end
+      # ONE requires usedcpu to be equal to cpu utilization on all processors
+      # ex. usedcpu=200 when there are 2 fully loaded cpus
+      # currently i get only average pcpu and multiply it by number of cpus
+      out = (container.command "cat /proc/cpuinfo").split
+      cpu_amount = out.find_all {|line| /processor/ =~ line}.size
 
+      out = (container.command "ps axo pcpu=").split
+      info[:usedcpu] = cpu_amount * out.inject(0.0) {|sum, current|sum + current.to_f}
+      
+      # net transmit & receive
+      out = container.command "cat /proc/net/dev"
+      # i'am wondering how long this shit will work
+      out.each_line do |line|
+        net = /\s*(?<interface>\w+)\s*:\s*(?<receive>\d+)(\s+\d+){7}\s+(?<transmit>\d+)/.match(line)
+        # omit loopback interface
+        next if !net || net[:interface] == "lo"        
+        info[:netrx] += net[:receive].to_i
+        info[:nettx] += net[:transmit].to_i
+      end
+            
       # computer container memory usage
       out = container.command  "free -k"
-      out.split(/\n/).each do |line|
-          if line =~ /^Mem:\s+\d+\s+(\d+)/
-              info[:USEDMEMORY] = $1.to_i
-          end
-      end
-           
+      info[:usedmemory] = /Mem:\s+\d+\s+(?<used>\d+)/.match(out)[:used].to_i
+            
       info
     rescue RuntimeError => e
       raise OpenVzDriverError, "Can't get container #{container.ctid} status. Details: #{e.message}"
@@ -196,7 +197,7 @@ module OpenNebula
     #
     # * *Args*    :
     #   - +container+ -> The container to contextualise. An instance of OpenVZ::Container class
-    #   - +iso_file+ -> Iso file which holds context data
+    #   - +iso_file+ -> Path to ISO file which holds context data. An instance of String class
     #   - +context+ -> Context parameters. An instance of Hash class
     def contextualise(container, iso_file, context)
       if context == {}

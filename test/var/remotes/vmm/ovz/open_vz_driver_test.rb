@@ -6,7 +6,7 @@ require 'flexmock/test_unit'
 
 module OpenNebula
   class OpenVzDriverTest < Test::Unit::TestCase
-    
+        
     def setup
       # mocks
       @container = flexmock("container")
@@ -37,6 +37,17 @@ module OpenNebula
     ensure
       TestUtils.purge TestUtils::VM_DATASTORE
     end
+    
+    def test_poll    
+      load 'test/resources/poll_data.rb'
+      
+      @container.should_receive(:command).times(4).and_return(CPU_INFO, CPU_USAGE, NET_USAGE, MEMORY_USAGE)
+      @container.should_receive(:status).times(1).and_return(%w(exist unmounted down suspended))
+      
+      expected_status = {:state => 'p', :usedmemory => 3665112, :usedcpu => 66.8, :netrx =>972526934, :nettx =>39121984}
+      
+      assert_equal expected_status, @driver.poll(@container)
+    end
 
     # verify that lowest available ve_id is used
     def test_ctid
@@ -51,3 +62,6 @@ module OpenNebula
 
   end
 end
+
+
+

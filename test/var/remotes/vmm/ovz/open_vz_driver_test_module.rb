@@ -36,18 +36,19 @@ module OpenNebula
 
       # poll
       status = @driver.poll container
-      assert_equal 'a', status[:STATE]
+      assert_equal 'a', status[:state]
+      # there have to be 5 values describing status
       assert_equal 5, status.size
 
       # shutdown
       @driver.shutdown container
-      assert_match(/exist.*down/, `vzctl status #{ctid}`.strip!)
+      assert_match(/exist.*down/, `vzctl status #{ctid}`)
 
       # restore container to previous state && cancel
       `vzctl start #{ctid}`
-      assert_match(/exist.*running/, `vzctl status #{ctid}`.strip!)
+      assert_match(/exist.*running/, `vzctl status #{ctid}`)
       @driver.cancel container
-      assert_match(/deleted/, `vzctl status #{ctid}`.strip!)
+      assert_match(/deleted/, `vzctl status #{ctid}`)
     end
 
     def test_driver_with_ctx

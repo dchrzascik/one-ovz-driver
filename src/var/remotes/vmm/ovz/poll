@@ -29,7 +29,7 @@ container = OpenVZ::Container.new(ctid)
 
 # final step
 begin
-  (driver.poll container).each_pair { |key, value| print "#{key}=#{value} "}
+  (driver.poll container).each_pair { |key, value| print "#{key.downcase}=#{value} "}
 rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
   p e.message
 end
