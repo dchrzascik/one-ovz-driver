@@ -14,8 +14,7 @@ class File
 end
 
 module OpenNebula
-  #  Groups utilities performing actions on files
-  #
+  #  FileUtils groups utilities performing actions on files
   class FileUtils
     #  An utility used to determine archive type
     #

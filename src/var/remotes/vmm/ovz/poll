@@ -28,6 +28,8 @@ ctid = ARGV[0]
 container = OpenVZ::Container.new(ctid)
 
 # final step
-(driver.poll container).each_pair do |key, value|
-  print "#{key}=#{value} "
+begin
+  (driver.poll container).each_pair { |key, value| print "#{key}=#{value} "}
+rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
+  p e.message
 end

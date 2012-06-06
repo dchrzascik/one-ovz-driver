@@ -6,6 +6,9 @@ require 'open_vz_data'
 require 'scripts_common'
 
 module OpenNebula
+  
+  # OpenVzDriver represents driver capable of performing basic operations characterized by OpenNebula vmm specification
+  #
   class OpenVzDriver
 
     # OpenVzDriver exception class
@@ -14,9 +17,13 @@ module OpenNebula
     # a directory where the context iso img is mounted
     CTX_ISO_MNT_DIR = '/mnt/isotmp'
 
-    # Creates new  based on its description file
+    # Creates new vm based on its description file
+    #
+    # * *Args* :
+    # - +open_vz_data+ -> reference to openvz data descriptor. An instance of OpenNebula::OpenVzData class
+    # - +container+ -> reference to container. An instance of OpenVZ::Container class
     def deploy(open_vz_data, container)
-      OpenNebula.log_debug("Deploying using ctid:#{container.ctid}")
+      OpenNebula.log_debug("Deploying vm #{open_vz_data.vmid} using ctid:#{container.ctid}")
 
       # create symlink to enable ovz to find image
       template_name = container.ctid
@@ -30,27 +37,37 @@ module OpenNebula
       container.start
 
       # and contextualise it
-      contextualise container, open_vz_data.vmid, open_vz_data.context
+      contextualise container, open_vz_data.context_disk, open_vz_data.context
       
       container.ctid
+    rescue RuntimeError => e
+      raise OpenVzDriverError, "Container #{container.ctid} can't be deployed. Details: #{e.message}"
     ensure
       # cleanup template cache - we don't need it anymore
       File.delete template_cache if template_cache and File.exists? template_cache
     end
 
     # Sends shutdown signal to a VM
+    #
+    # * *Args* :
+    # - +container+ -> reference to container. An instance of OpenVZ::Container class
     def shutdown(container)
+      OpenNebula.log_debug "Shutdowning container: #{container.ctid}"
       container.stop
     rescue RuntimeError => e
-      raise OpenVzDriverError, "Container can't be stopped. Details: #{e.message}"
+      raise OpenVzDriverError, "Container #{container.ctid} can't be stopped. Details: #{e.message}"
     end
 
     # Destroys a Vm
+    #
+    # * *Args* :
+    # - +container+ -> reference to container. An instance of OpenVZ::Container class
     def cancel(container)
-      self.shutdown container
+      OpenNebula.log_debug "Canceling container: #{container.ctid}"
+      container.stop
       container.destroy
     rescue RuntimeError => e
-      raise OpenVzDriverError, "Container can't be canceled. Details: #{e.message}"
+      raise OpenVzDriverError, "Container #{container.ctid} can't be canceled. Details: #{e.message}"
     end
 
     # Saves the state of a Vm
@@ -69,6 +86,9 @@ module OpenNebula
     end
 
     # Gets information about a VM
+    #
+    # * *Args* :
+    # - +container+ -> reference to container. An instance of OpenVZ::Container class
     def poll(container)
       info = {}
       
@@ -105,6 +125,8 @@ module OpenNebula
       end
            
       info
+    rescue RuntimeError => e
+      raise OpenVzDriverError, "Can't get container #{container.ctid} status. Details: #{e.message}"
     end
 
     # Get the ctid.
@@ -144,6 +166,7 @@ module OpenNebula
     # - +disk_file+ -> path to vm diskfile
     def create_template(template_name, disk_file)
       disk_file_type = FileUtils.archive_type disk_file
+      # TODO such hardcoded paths have to be moved out to some configuration files
       template_file = File.join("/", "vz", "template", "cache", "#{template_name}.#{disk_file_type}")
       File.symlink disk_file, template_file
       template_file
@@ -173,22 +196,22 @@ module OpenNebula
     #
     # * *Args*    :
     #   - +container+ -> The container to contextualise. An instance of OpenVZ::Container class
-    #   - +one_vmid+ -> ID set by nebula
-    #   - +context+ -> Context parameters. An instance of OpenVzData::ContextNode class
-    def contextualise(container, one_vmid, context)
+    #   - +iso_file+ -> Iso file which holds context data
+    #   - +context+ -> Context parameters. An instance of Hash class
+    def contextualise(container, iso_file, context)
       if context == {}
         OpenNebula.log_debug "No context provided"
         return
       end
 
-      OpenNebula.log_debug "Applying contextualisation"
+      OpenNebula.log_debug "Applying contextualisation using #{iso_file}, files: #{context[:files]}"
 
+      # TODO such hardcoded paths have to be moved out to some configuration files
       ctx_mnt_dir = "/vz/root/#{container.ctid}#{CTX_ISO_MNT_DIR}"
-      iso_file = Dir.glob("/vz/one/datastores/0/#{one_vmid}/*.iso").first
 
       # mount the iso file
       container.command "mkdir #{CTX_ISO_MNT_DIR}"
-      OpenVZ::Util.execute "sudo mount #{iso_file} #{ctx_mnt_dir} -o loop"
+      OpenNebula.exec_and_log "sudo mount #{iso_file} #{ctx_mnt_dir} -o loop"
 
       # run all executable files. It's up to them whether they use context.sh or not
       files = FileUtils.filter_executables context[:files]
@@ -204,10 +227,10 @@ module OpenNebula
 
     ensure
       # cleanup
-      OpenVZ::Util.execute "sudo mountpoint #{ctx_mnt_dir}; if [ $? -eq 0 ]; then " \
-                            " sudo umount #{ctx_mnt_dir};" \
-                            " sudo rmdir #{ctx_mnt_dir};" \
-                            " fi"
+      OpenNebula.exec_and_log "sudo mountpoint #{ctx_mnt_dir}; if [ $? -eq 0 ]; then " \
+                              " sudo umount #{ctx_mnt_dir};" \
+                              " sudo rmdir #{ctx_mnt_dir};" \
+                              " fi"
     end
   end
 end

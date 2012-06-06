@@ -32,4 +32,8 @@ container = OpenVZ::Container.new(ctid)
 # final step
 deploy_ctid = driver.deploy open_vz_data, container
 
-p deploy_ctid
+begin
+  p deploy_ctid
+rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
+  p e.message
+end
