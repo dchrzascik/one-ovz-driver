@@ -1,36 +1,26 @@
 $: << "#{File.dirname(__FILE__)}/../../"
 
 require 'openvz'
+require 'file_utils'
 require 'open_vz_data'
 require 'scripts_common'
-
-class File
-  def self.symlink source, target
-    OpenNebula.exec_and_log "sudo ln -s #{source} #{target}"
-  end
-end
 
 module OpenNebula
   class OpenVzDriver
 
     # OpenVzDriver exception class
-    class OpenVzDriverException < StandardError; end
+    class OpenVzDriverError < StandardError; end
 
     # a directory where the context iso img is mounted
     CTX_ISO_MNT_DIR = '/mnt/isotmp'
-
-    # allowed executable extensions
-    CTX_EXEC_EXT = %w(.sh .ksh .zsh)
-
 
     # Creates new  based on its description file
     def deploy(open_vz_data, container)
       OpenNebula.log_debug("Deploying using ctid:#{container.ctid}")
 
-      # create symlink in /vz/template/cache
-      # to enable ovz to find image
-      template_name = "one-#{container.ctid}"
-      create_template template_name, open_vz_data.disk
+      # create symlink to enable ovz to find image
+      template_name = container.ctid
+      template_cache = create_template template_name, open_vz_data.disk
 
       # options to be passed to vzctl create
       options = process_options open_vz_data.raw, {:ostemplate => template_name}
@@ -41,18 +31,18 @@ module OpenNebula
 
       # and contextualise it
       contextualise container, open_vz_data.vmid, open_vz_data.context
-
+      
       container.ctid
+    ensure
+      # cleanup template cache - we don't need it anymore
+      File.delete template_cache if template_cache and File.exists? template_cache
     end
 
     # Sends shutdown signal to a VM
     def shutdown(container)
       container.stop
-      template_name = "one-#{container.ctid}"
-      template_cache = Dir.glob("/vz/template/cache/#{template_name}.*").first
-      OpenNebula.exec_and_log "sudo rm -rf #{template_cache}"
     rescue RuntimeError => e
-      raise OpenVzDriverException, "Container can't be stopped. Details: #{e.message}"
+      raise OpenVzDriverError, "Container can't be stopped. Details: #{e.message}"
     end
 
     # Destroys a Vm
@@ -60,7 +50,7 @@ module OpenNebula
       self.shutdown container
       container.destroy
     rescue RuntimeError => e
-      raise OpenVzDriverException, "Container can't be canceled. Details: #{e.message}"
+      raise OpenVzDriverError, "Container can't be canceled. Details: #{e.message}"
     end
 
     # Saves the state of a Vm
@@ -118,11 +108,15 @@ module OpenNebula
     end
 
     # Get the ctid.
-    # It's equal to vmid + offset. If there is already such id, then the nearest one is taken
     #
-    # @param reference to inventory which holds data
-    # @return ctid (string)
+    # * *Args* :
+    # - +inventory+ -> reference to inventory which lists all taken ctids
+    # - +vmid+ -> vmid used by opennebula
+    # - +offset+ -> offset between vmid and proposed ctid. 
+    #               It's used becouse vmids used by ONE starts from 0, whereas OpenVZ reserves ctids < 100 for special purposes.
+    #               Hence, offset should be at least 100
     def self.ctid(inventory, vmid, offset = 690)
+      # returned id is equal to vmid + offset. If there is already such id, then the nearest one is taken
       # we internally operate on ints
       ct_ids = inventory.ids.map { |e| e.to_i  }
       proposed = vmid.to_i
@@ -141,40 +135,27 @@ module OpenNebula
       end.to_s
     end
 
-    #  An utility used to filter executable filenames
-    #
-    # * *Args*    :
-    #   - +files+ -> String containing filenames separated by whitespaces
-    # * *Returns* :
-    #   - Filtered array containing only executable filenames. If none of the filenames matches, the empty array is returned
-    def self.filter_executable_files(files)
-      if files.nil? or files.empty?
-        []
-      else
-        files.split.find_all {|f| CTX_EXEC_EXT.find {|e| e == File.extname(f) } != nil }
-      end
-    end
-
     private
 
+    # Helper method used for template creation by symlinking it to the vm's datastore disk location
+    #
+    # * *Args* :
+    # - +template_name+ -> name of the template cache to ve 
+    # - +disk_file+ -> path to vm diskfile
     def create_template(template_name, disk_file)
-      disk_file_type = template_type disk_file
+      disk_file_type = FileUtils.archive_type disk_file
       template_file = File.join("/", "vz", "template", "cache", "#{template_name}.#{disk_file_type}")
       File.symlink disk_file, template_file
+      template_file
     end
 
-    def template_type(file_name)
-      # compression type is determined by 2 bytes representing 'magic number'
-      types = {"\x1F\x8B" => 'tar.gz', "BZ" => 'tar.bz2', "\xFD\x00" => 'tar.xz'}
-
-      File.open(file_name, "r") do |file|
-        bytes = file.read(2)
-        return types[bytes]
-      end
-      
-      raise "Cannot determine filetype of #{file_name}"
-    end
-
+    #  Method used to merge vzctl options provided within:
+    #  - <raw> section of deployment file
+    #  - arbitrary data passed by options
+    #
+    # * *Args*    :
+    #   - +raw+ -> The container to contextualise. An instance of OpenVZ::Container class
+    #   - +options+ -> arbitrary data, ex ostemplate, ip_add
     def process_options(raw, options = {})
       raw = raw.merge(options)
       
@@ -183,7 +164,7 @@ module OpenNebula
       raw.each {|k, v| new_hash.merge!({k.downcase => v})}
       
       # filter out type -> it is only meaningful to opennebula
-      new_hash.delete('type')
+      new_hash.delete(:type)
 
       new_hash
     end
@@ -195,7 +176,7 @@ module OpenNebula
     #   - +one_vmid+ -> ID set by nebula
     #   - +context+ -> Context parameters. An instance of OpenVzData::ContextNode class
     def contextualise(container, one_vmid, context)
-      if context.nil?
+      if context == {}
         OpenNebula.log_debug "No context provided"
         return
       end
@@ -210,7 +191,7 @@ module OpenNebula
       OpenVZ::Util.execute "sudo mount #{iso_file} #{ctx_mnt_dir} -o loop"
 
       # run all executable files. It's up to them whether they use context.sh or not
-      files = OpenVzDriver.filter_executable_files context.files
+      files = FileUtils.filter_executables context[:files]
       files.each do |abs_fname|
         fname = File.basename abs_fname
         container.command ". #{CTX_ISO_MNT_DIR}/#{fname}"
@@ -219,7 +200,7 @@ module OpenNebula
     rescue => e
       OpenNebula.log_error "Exception while performing contextualisation: #{e.message}"
       # reraise the exception
-      raise OpenVzDriverException, "Exception while performing contextualisation: #{e.message}"
+      raise OpenVzDriverError, "Exception while performing contextualisation: #{e.message}"
 
     ensure
       # cleanup

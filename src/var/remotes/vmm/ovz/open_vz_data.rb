@@ -34,25 +34,11 @@ module OpenNebula
         raw = {}
         default_when_xpath_err {
           @path.each(xml) do |node|
-            raw[node.name] = node.text
+            raw[node.name.downcase.to_sym] = node.text
           end
         }
         raw
       end
-    end
-
-    # A mapping class for the vm's context
-    class ContextNode
-      include XML::Mapping
-
-      text_node :files, "FILES", :default_value =>  nil
-      text_node :hostname, "HOSTNAME", :default_value =>  nil
-      text_node :ip_private, "IP_PRIVATE", :default_value =>  nil
-      text_node :target, "TARGET", :default_value =>  nil
-      text_node :ip_gen, "IP_GEN", :default_value =>  nil
-      text_node :ip_public, "IP_PUBLIC", :default_value =>  nil
-      text_node :dns, "DNS", :default_value =>  nil
-
     end
 
     XML::Mapping.add_node_class RawNode
@@ -61,7 +47,7 @@ module OpenNebula
     text_node :name, 'NAME'
     text_node :vmid, 'VMID'
     raw_node :raw, 'RAW'
-    object_node :context, 'CONTEXT', :class => ContextNode, :default_value => nil
+    raw_node :context, 'CONTEXT'
 
     # note: this is bit tricky since normally we don't override new
     # however by doing that we can provide ease to use interface
