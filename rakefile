@@ -51,3 +51,7 @@ task :gems do
     sh "gem install #{dependency}"
   end
 end
+
+task :doc do
+  sh "rdoc -x _test.rb"
+end
