@@ -25,11 +25,13 @@ driver = OpenNebula::OpenVzDriver.new
 
 # setup container
 ctid = ARGV[0]
+destination_host = ARGV[1]
+puts "ctid: #{ctid}, dest: #{destination_host}"
 container = OpenVZ::Container.new(ctid)
 
 # final step
 begin
-  (driver.poll container).each_pair { |key, value| print "#{key.upcase}=#{value} "}
+  p driver.migrate container, destination_host
 rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
   p e.message
 end

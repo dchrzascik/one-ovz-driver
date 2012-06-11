@@ -81,8 +81,13 @@ module OpenNebula
     end
 
     # Performs live migration of a VM
-    def migrate(deploy_id, host)
-      OpenNebula.log_error("Not yet implemented")
+    def migrate(container, host)
+      OpenNebula.log_debug "Migrating container: #{container.ctid} to host: #{host}"
+      # TODO migration will crash when container.ctid is used at destination host
+      # however this will require modification of ruby-openvz (ie. allowing of quering remote host for ids)
+      container.migrate host
+    rescue RuntimeError => e
+      raise OpenVzDriverError, "Container #{container.ctid} can't be migrated. Details: #{e.message}"
     end
 
     # Gets information about a VM
