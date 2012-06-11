@@ -25,12 +25,11 @@ driver = OpenNebula::OpenVzDriver.new
 
 # setup container
 ctid = ARGV[0]
-destination_host = ARGV[1]
 container = OpenVZ::Container.new(ctid)
 
 # final step
 begin
-  p driver.migrate container, destination_host
+  p driver.reboot container
 rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
   p e.message
 end

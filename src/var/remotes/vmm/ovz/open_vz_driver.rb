@@ -79,7 +79,7 @@ module OpenNebula
     def restore(file)
       OpenNebula.log_error("Not yet implemented")
     end
-
+    
     # Performs live migration of a VM
     def migrate(container, host)
       OpenNebula.log_debug "Migrating container: #{container.ctid} to host: #{host}"
@@ -88,6 +88,13 @@ module OpenNebula
       container.migrate host
     rescue RuntimeError => e
       raise OpenVzDriverError, "Container #{container.ctid} can't be migrated. Details: #{e.message}"
+    end
+
+    def reboot(container)  
+      OpenNebula.log_debug "Rebooting container: #{container.ctid}"
+      container.restart
+    rescue RuntimeError => e
+      raise OpenVzDriverError, "Container #{container.ctid} can't be rebooted. Details: #{e.message}"
     end
 
     # Gets information about a VM

@@ -44,6 +44,11 @@ module OpenNebula
       @driver.shutdown container
       assert_match(/exist.*down/, `vzctl status #{ctid}`)
 
+      # reboot
+      out = @driver.reboot container
+      assert_match(/Restarting/, out)
+      assert_equal true, TestUtils.ct_exists?(ctid)
+
       # restore container to previous state && cancel
       `vzctl start #{ctid}`
       assert_match(/exist.*running/, `vzctl status #{ctid}`)
