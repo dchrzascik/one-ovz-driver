@@ -42,10 +42,16 @@ module OpenNebula
       load 'test/resources/poll_data.rb'
       
       @container.should_receive(:command).times(4).and_return(CPU_INFO, CPU_USAGE, NET_USAGE, MEMORY_USAGE)
-      @container.should_receive(:status).times(1).and_return(%w(exist unmounted down suspended))
+      @container.should_receive(:status).times(1).and_return(%w(exist unmounted running))
       
-      expected_status = {:state => 'p', :usedmemory => 3665112, :usedcpu => 66.8, :netrx =>972526934, :nettx =>39121984}
+      expected_status = {:state => 'a', :usedmemory => 3665112, :usedcpu => 66.8, :netrx =>972526934, :nettx =>39121984}
       
+      assert_equal expected_status, @driver.poll(@container)
+
+      # try on deleted container, we should get nothing here
+      @container.should_receive(:status).times(1).and_return(%w(deleted unmounted down))
+      expected_status = {:state => 'd'}
+
       assert_equal expected_status, @driver.poll(@container)
     end
 

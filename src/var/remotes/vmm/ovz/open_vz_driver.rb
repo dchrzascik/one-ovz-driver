@@ -158,6 +158,9 @@ module OpenNebula
       # however if there is additional status field then it may be also suspended (see vzctl status comamnd)
       info[:state] = states[status[3]] if status.size == 4
 
+      # if ct is down there is nothing we can do here
+      return info if info[:state] != 'a'
+
       # ONE requires usedcpu to be equal to cpu utilization on all processors
       # ex. usedcpu=200 when there are 2 fully loaded cpus
       # currently i get only average pcpu and multiply it by number of cpus
