@@ -20,7 +20,7 @@ module OpenNebula
     end
     
     def self.purge_ct(ctid)
-      `sudo vzctl stop #{ctid} && sudo vzctl delete #{ctid}` if self.ct_exists? ctid
+      `sudo vzctl stop #{ctid} && sudo vzctl destroy #{ctid}` if self.ct_exists? ctid
     end
 
     def self.purge(file)

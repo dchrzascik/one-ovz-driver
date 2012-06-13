@@ -30,6 +30,6 @@ container = OpenVZ::Container.new(ctid)
 # final step
 begin
   (driver.poll container).each_pair { |key, value| print "#{key.upcase}=#{value} "}
-rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
+rescue OpenNebula::OpenVzDriver::OpenVzDriverError => e
   p e.message
 end

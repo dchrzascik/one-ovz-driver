@@ -31,6 +31,6 @@ container = OpenVZ::Container.new(ctid)
 # final step
 begin
   p driver.migrate container, destination_host
-rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
+rescue OpenNebula::OpenVzDriver::OpenVzDriverError => e
   p e.message
 end

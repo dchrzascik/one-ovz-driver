@@ -30,6 +30,6 @@ container = OpenVZ::Container.new(ctid)
 # final step
 begin
   p driver.reboot container
-rescue OpenNebula::OpenVzDriver::OpenVzDriverException => e
+rescue OpenNebula::OpenVzDriver::OpenVzDriverError => e
   p e.message
 end

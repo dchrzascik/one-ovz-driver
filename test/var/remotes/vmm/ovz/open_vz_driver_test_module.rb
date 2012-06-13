@@ -6,6 +6,8 @@ require 'flexmock/test_unit'
 
 module OpenNebula
   class OpenVzDriverTestModule < Test::Unit::TestCase
+    CHECKPOINT_DST = "/tmp/checkpoint"
+    
     def setup
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
@@ -19,6 +21,7 @@ module OpenNebula
     def teardown
       TestUtils.purge TestUtils::VM_DATASTORE
       TestUtils.purge_ct TestUtils::CTID
+      TestUtils.purge CHECKPOINT_DST
     end
 
     def test_driver
@@ -34,6 +37,7 @@ module OpenNebula
       # ensure that we've cleaned up environment
       assert_equal false, File.exists?(TestUtils::CT_CACHE)
 
+
       # poll
       status = @driver.poll container
       assert_equal 'a', status[:state]
@@ -48,14 +52,27 @@ module OpenNebula
       out = @driver.reboot container
       assert_match(/Restarting/, out)
       assert_equal true, TestUtils.ct_exists?(ctid)
+     
+      # save
+      @driver.save container, CHECKPOINT_DST
+      assert_equal true, TestUtils.ct_exists?(ctid)
+      assert_equal true, File.exists?(CHECKPOINT_DST)
+      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint" )
+      assert_match(/running/, `vzctl status #{ctid}`)
+      
+      # destroy & restore
+      TestUtils.purge_ct ctid
+      assert_equal false, TestUtils.ct_exists?(ctid)
+      @driver.restore CHECKPOINT_DST
+      assert_equal true, TestUtils.ct_exists?(ctid)
+      assert_match(/running/, `vzctl status #{ctid}`)
+      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint" )
 
       # restore container to previous state && cancel
-      `vzctl start #{ctid}`
-      assert_match(/exist.*running/, `vzctl status #{ctid}`)
       @driver.cancel container
       assert_match(/deleted/, `vzctl status #{ctid}`)
     end
-
+    
     def test_driver_with_ctx
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")
@@ -72,6 +89,6 @@ module OpenNebula
       assert @open_vz_data.context != nil
       assert "tst\n" == container.command('cat /tmp/tst')
     end
-
+    
   end
 end

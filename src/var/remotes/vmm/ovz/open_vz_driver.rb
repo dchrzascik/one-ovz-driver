@@ -71,13 +71,58 @@ module OpenNebula
     end
 
     # Saves the state of a Vm
-    def save(deploy_id, file)
-      OpenNebula.log_error("Not yet implemented")
+    # Note that the container isn't removed only its copy is made
+    def save(container, destination_file)
+      OpenNebula.log_debug "Saving container: #{container.ctid} to #{destination_file}"
+      
+      # to preserve the current CT state we've got to:
+      # - save the latest ct checkpoint
+      # - save the ct config file
+      # - save the /vz/private/ctid
+      # to do so, the archive with above data will be created
+      # note that I don't want to preserve absolute paths such as /vz/private since it may be installation specifc
+      container.start if container.status[2] == 'down'
+
+      checkpoint_file = "/tmp/#{container.ctid}-checkpoint" 
+      container.checkpoint checkpoint_file
+      
+      files = %W(#{checkpoint_file} /etc/vz/conf/#{container.ctid}.conf /vz/private/#{container.ctid})
+      files_cmd = files.inject("") {|current, f| current + " -C " + File.dirname(f) + " " + File.basename(f)}
+            
+      OpenNebula.exec_and_log "sudo tar czf #{destination_file} #{files_cmd}"
+
+      # after saving ct state, container is suspended so start it
+      container.start
+    rescue RuntimeError => e
+      raise OpenVzDriverError, "Container #{container.ctid} can't be saved. Details: #{e.message}"
+    ensure
+      OpenNebula.exec_and_log "sudo rm -rf #{checkpoint_file}" if checkpoint_file and File.exists? checkpoint_file
     end
 
     # Restores a VM to a previous saved state
-    def restore(file)
-      OpenNebula.log_error("Not yet implemented")
+    def restore(source_file)
+      OpenNebula.log_debug "Restoring container from #{source_file}"
+      
+      # firstly, get the container id
+      # it's obtained by getting top level directory name which is number in our convention (see save method)
+      files = OpenVZ::Util.execute "sudo tar --exclude='*/*' -tf #{source_file}"
+      ctid = files.split("\n").find {|t| t=~ /\d+\//}.chomp('/')
+      OpenNebula.log_debug "During restoring found ctid: #{ctid}"
+      
+      # unpack files to their corresponding dirs
+      # TODO elimnate hardcoded paths
+      checkpoint_file = "/tmp/#{ctid}-checkpoint" 
+      files = %W(#{checkpoint_file} /etc/vz/conf/#{ctid}.conf /vz/private/#{ctid})
+      files_cmd = files.inject("") {|current, f| current + " -C " + File.dirname(f) + " " + File.basename(f)}
+      
+      OpenNebula.exec_and_log "sudo tar xzf #{source_file} #{files_cmd}"
+      
+      container = OpenVZ::Container.new(ctid)
+      container.restore checkpoint_file
+    rescue RuntimeError => e
+      raise OpenVzDriverError, "Container #{container.ctid} can't be restored. Details: #{e.message}"
+    ensure
+      OpenNebula.exec_and_log "sudo rm -rf #{checkpoint_file}" if checkpoint_file and File.exists? checkpoint_file
     end
     
     # Performs live migration of a VM
@@ -112,7 +157,7 @@ module OpenNebula
       info[:state] = states[status[0]]
       # however if there is additional status field then it may be also suspended (see vzctl status comamnd)
       info[:state] = states[status[3]] if status.size == 4
-      
+
       # ONE requires usedcpu to be equal to cpu utilization on all processors
       # ex. usedcpu=200 when there are 2 fully loaded cpus
       # currently i get only average pcpu and multiply it by number of cpus
@@ -171,7 +216,7 @@ module OpenNebula
     end
 
     private
-
+    
     # Helper method used for template creation by symlinking it to the vm's datastore disk location
     #
     # * *Args* :
