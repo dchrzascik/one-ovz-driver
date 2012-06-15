@@ -1,21 +1,30 @@
 OpenNebula OpenVZ driver
 ========================
 
-This set of drivers allows you to use [OpenVZ](http://wiki.openvz.org/Main_Page) as a hypervisor in [OpenNebula](http://opennebula.org). 
+### Brief description
 
-Cluster Node requirements
--------------------------
-1. ruby >= 1.9
- * rvm is recommended to manage ruby version
- * ex. rvm [tutorial for centos 6](http://blog.jeffcosta.com/2011/07/22/install-ruby-version-manager-rvm-on-centos-6/)
+This set of drivers allows you to use [OpenVZ](http://wiki.openvz.org/Main_Page) as a hypervisor in [OpenNebula](http://opennebula.org).
 
-2. rake
- * should be available by default, if not then install them manually
-<pre>
-gem install rake
-</pre>
+It consists of two main parts:
+ * Information Manager (IM) - drivers responsible for monitoring cluster node
+ * Virtualization Manager (VMM) - drivers responsible for dealing with openvz to create, manage and monitor containers
 
-3. remaining gems
-<pre>
-rake gems
-</pre>
+### License
+
+The project is licensed under _Apache License Version 2.0_
+
+### Version
+
+Current driver version: 1.0, which supports:
+ * OpenNebula 3.4
+ * OpenVZ version same as in 
+ 
+### Installation notes and documenation
+
+See project [wiki pages](https://github.com/dchrzascik/one-ovz-driver/wiki)
+
+## Authors
+ * [Marta Ryłko](https://github.com/martar)
+ * [Radosław Morytko](https://github.com/radekmorytko)
+ * [Dariusz Chrząścik](https://github.com/dchrzascik)
+
