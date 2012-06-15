@@ -46,7 +46,7 @@ module OpenNebula
 
       # shutdown
       @driver.shutdown container
-      assert_match(/exist.*down/, `vzctl status #{ctid}`)
+      assert_match(/exist.*down/, `sudo vzctl status #{ctid}`)
 
       # reboot
       out = @driver.reboot container
@@ -58,19 +58,19 @@ module OpenNebula
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_equal true, File.exists?(CHECKPOINT_DST)
       assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint" )
-      assert_match(/running/, `vzctl status #{ctid}`)
+      assert_match(/running/, `sudo vzctl status #{ctid}`)
       
       # destroy & restore
       TestUtils.purge_ct ctid
       assert_equal false, TestUtils.ct_exists?(ctid)
       @driver.restore CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
-      assert_match(/running/, `vzctl status #{ctid}`)
+      assert_match(/running/, `sudo vzctl status #{ctid}`)
       assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint" )
 
       # restore container to previous state && cancel
       @driver.cancel container
-      assert_match(/deleted/, `vzctl status #{ctid}`)
+      assert_match(/deleted/, `sudo vzctl status #{ctid}`)
     end
     
     def test_driver_with_ctx

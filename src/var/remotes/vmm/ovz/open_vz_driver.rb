@@ -16,6 +16,9 @@ module OpenNebula
 
     # a directory where the context iso img is mounted
     CTX_ISO_MNT_DIR = '/mnt/isotmp'
+    
+    # enforce using sudo since opennebula runs script as a oneadmin
+    OpenVZ::Util.enforce_sudo = true
 
     # Creates new vm based on its description file
     #
