@@ -68,7 +68,7 @@ module OpenNebula
       iso = Dir.glob("/vz/one/datastores/0/#{vmid}/*.iso")
       # there have to be exacly one iso file, otherwise we don't know which one holds context data
       # note: this will raise exception even if there is no context at all
-      raise OpenVzDriverError, "Exception while performing contextualisation: #{e.message}" if iso.size != 1
+      raise OpenVzDriverError, "Can't select context file: there are #{iso.size} isos corresponding to this vm" if iso.size != 1
       iso.first
     end
 
