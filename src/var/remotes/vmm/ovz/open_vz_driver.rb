@@ -39,6 +39,9 @@ module OpenNebula
       container.create( options )
       container.start
 
+      # set up networking
+      apply_network_settings container, open_vz_data.networking
+
       # and contextualise it
       contextualise container, open_vz_data.context_disk, open_vz_data.context
       
@@ -222,6 +225,21 @@ module OpenNebula
     end
 
     private
+
+    # A method that applies network settings provided in the deployment file
+    #
+    # * *Args* :
+    # - +networking+ -> hash with specified options
+    def apply_network_settings container, networking
+      OpenNebula.log_debug "Configuring network"
+      nic = {:ifname => 'eth0', :host_mac => 'FE:FF:FF:FF:FF:FF'}
+
+      container.add_veth nic
+      OpenVZ::Util.execute "brctl addif #{networking[:bridge]} veth#{container.ctid}.0" unless networking[:bridge].nil?
+
+      container.command "ifconfig eth0 #{networking[:ip]}"
+      container.command "ifconfig eth0 up"
+    end
     
     # Helper method used for template creation by symlinking it to the vm's datastore disk location
     #

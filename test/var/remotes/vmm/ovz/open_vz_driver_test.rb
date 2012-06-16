@@ -28,6 +28,7 @@ module OpenNebula
       @open_vz_data.should_receive(:context).times(1).and_return({})
       @open_vz_data.should_receive(:context_disk).times(1).and_return(TestUtils::VM_CTX)
       @open_vz_data.should_receive(:vmid).times(1).and_return(TestUtils::VMID)
+      @open_vz_data.should_receive(:networking).times(1).and_return({})
 
       # assertions
       deploy_ctid = @driver.deploy(@open_vz_data, @container)

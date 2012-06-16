@@ -50,6 +50,7 @@ module OpenNebula
     text_node :vmid, 'VMID'
     raw_node :raw, 'RAW'
     raw_node :context, 'CONTEXT'
+    raw_node :networking, 'NIC'
 
     def self.new(stream)
       # note: this is bit tricky since normally we don't override new
