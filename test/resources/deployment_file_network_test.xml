@@ -1,0 +1,37 @@
+<TEMPLATE>
+  <CONTEXT>
+    <FILES><![CDATA[/cloud/templates/contextualization/test.sh]]></FILES>
+    <TARGET><![CDATA[hdb]]></TARGET>
+  </CONTEXT>
+  <DISK>
+    <CLONE><![CDATA[YES]]></CLONE>
+    <DATASTORE><![CDATA[default]]></DATASTORE>
+    <DATASTORE_ID><![CDATA[1]]></DATASTORE_ID>
+    <DISK_ID><![CDATA[0]]></DISK_ID>
+    <IMAGE><![CDATA[Slack minimal]]></IMAGE>
+    <IMAGE_ID><![CDATA[1]]></IMAGE_ID>
+    <READONLY><![CDATA[NO]]></READONLY>
+    <SAVE><![CDATA[NO]]></SAVE>
+    <SOURCE><![CDATA[/cloud/one/var/datastores/1/35300e345f0da0c5ed7ddbe1950856c3]]></SOURCE>
+    <TARGET><![CDATA[hda]]></TARGET>
+    <TM_MAD><![CDATA[ssh]]></TM_MAD>
+    <TYPE><![CDATA[DISK]]></TYPE>
+  </DISK>
+  <DISK>
+    <DISK_ID><![CDATA[1]]></DISK_ID>
+    <SIZE><![CDATA[512]]></SIZE>
+    <TARGET><![CDATA[hdd]]></TARGET>
+    <TYPE><![CDATA[swap]]></TYPE>
+  </DISK>
+  <NAME><![CDATA[one-51]]></NAME>
+  <NIC>
+    <BRIDGE><![CDATA[br0]]></BRIDGE>
+    <IP><![CDATA[10.1.1.2]]></IP>
+    <MAC><![CDATA[02:00:0a:01:01:02]]></MAC>
+    <NETWORK><![CDATA[Ranged lan with a bridge]]></NETWORK>
+    <NETWORK_ID><![CDATA[1]]></NETWORK_ID>
+    <VLAN><![CDATA[NO]]></VLAN>
+  </NIC>
+  <TEMPLATE_ID><![CDATA[4]]></TEMPLATE_ID>
+  <VMID><![CDATA[4900]]></VMID>
+</TEMPLATE>
