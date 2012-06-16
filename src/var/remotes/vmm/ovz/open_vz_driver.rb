@@ -108,7 +108,7 @@ module OpenNebula
       
       # firstly, get the container id
       # it's obtained by getting top level directory name which is number in our convention (see save method)
-      files = OpenVZ::Util.execute "sudo tar --exclude='*/*' -tf #{source_file}"
+      files = OpenVZ::Util.execute "tar --exclude='*/*' -tf #{source_file}"
       ctid = files.split("\n").find {|t| t=~ /\d+\//}.chomp('/')
       OpenNebula.log_debug "During restoring found ctid: #{ctid}"
       
@@ -294,7 +294,7 @@ module OpenNebula
       OpenNebula.exec_and_log "sudo mountpoint #{ctx_mnt_dir}; if [ $? -eq 0 ]; then " \
                               " sudo umount #{ctx_mnt_dir};" \
                               " sudo rmdir #{ctx_mnt_dir};" \
-                              " fi"
+                              " fi" if ctx_mnt_dir
     end
   end
 end
