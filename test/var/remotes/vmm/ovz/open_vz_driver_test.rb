@@ -6,12 +6,7 @@ require 'flexmock/test_unit'
 
 module OpenNebula
   class OpenVzDriverTest < Test::Unit::TestCase
-
-    ONE_VMID = 49
-    CTID = 1001
-    DISK = File.absolute_path "test/resources/disk.0"
-    ISO_IMG = File.absolute_path 'test/resources/disk.2'
-    CACHE = "/vz/template/cache/one-#{CTID}.tar.gz"
+        
     def setup
       # mocks
       @container = flexmock("container")
@@ -23,30 +18,43 @@ module OpenNebula
 
     def test_deploy
       # set up mocks
-      @container.should_receive(:ctid).times(3).and_return(CTID)
+      @container.should_receive(:ctid).times(3).and_return(TestUtils::CTID)
       @container.should_receive(:create).times(1)
       @container.should_receive(:start).times(1)
-      @container.should_receive(:command).times(0)
+      @container.should_receive(:command).times(2)
+      @container.should_receive(:add_veth).times(1)
 
-      @open_vz_data.should_receive(:disk).times(1).and_return(DISK)
+      @open_vz_data.should_receive(:disk).times(1).and_return(TestUtils::TEST_DISK)
       @open_vz_data.should_receive(:raw).times(1).and_return({})
-      @open_vz_data.should_receive(:context).times(1).and_return(nil)
-      @open_vz_data.should_receive(:vmid).times(1).and_return(ONE_VMID)
-
-      # create img dir and contextualisation iso image link
-      Dir.mkdir "/vz/one/datastores/0/#{ONE_VMID}" unless File.exists? "/vz/one/datastores/0/#{ONE_VMID}"
-      File.symlink "#{ISO_IMG}", "/vz/one/datastores/0/#{ONE_VMID}/disk.2.iso"
+      @open_vz_data.should_receive(:context).times(1).and_return({})
+      @open_vz_data.should_receive(:context_disk).times(1).and_return(TestUtils::VM_CTX)
+      @open_vz_data.should_receive(:vmid).times(1).and_return(TestUtils::VMID)
+      @open_vz_data.should_receive(:networking).times(1).and_return({})
 
       # assertions
       deploy_ctid = @driver.deploy(@open_vz_data, @container)
-      assert_equal CTID, deploy_ctid
-      assert_equal true, File.exists?(CACHE)
+      assert_equal TestUtils::CTID, deploy_ctid
+      # ensure that we've cleaned up environment
+      assert_equal false, File.exists?(TestUtils::CT_CACHE)
     ensure
-      if deploy_ctid
-        TestUtils.purge_template CACHE
-        File.unlink "/vz/one/datastores/0/#{ONE_VMID}/disk.2.iso"
-        Dir.rmdir "/vz/one/datastores/0/#{ONE_VMID}"
-      end
+      TestUtils.purge TestUtils::VM_DATASTORE
+    end
+    
+    def test_poll    
+      load 'test/resources/poll_data.rb'
+      
+      @container.should_receive(:command).times(4).and_return(CPU_INFO, CPU_USAGE, NET_USAGE, MEMORY_USAGE)
+      @container.should_receive(:status).times(1).and_return(%w(exist unmounted running))
+      
+      expected_status = {:state => 'a', :usedmemory => 3665112, :usedcpu => 66.8, :netrx =>972526934, :nettx =>39121984}
+      
+      assert_equal expected_status, @driver.poll(@container)
+
+      # try on deleted container, we should get nothing here
+      @container.should_receive(:status).times(1).and_return(%w(deleted unmounted down))
+      expected_status = {:state => 'd'}
+
+      assert_equal expected_status, @driver.poll(@container)
     end
 
     # verify that lowest available ve_id is used
@@ -60,17 +68,8 @@ module OpenNebula
       end
     end
 
-    def test_filter_executable_files
-      files = '/root/sample_cd.iso /home/radek/wallpaper.jpg /usr/local/executable.sh /tmp/yaexecutable.ksh'
-      expected_files = %w(/usr/local/executable.sh /tmp/yaexecutable.ksh)
-
-      assert_equal expected_files, OpenVzDriver.filter_executable_files(files)
-
-      assert OpenVzDriver.filter_executable_files(nil) == []
-      assert OpenVzDriver.filter_executable_files([]) == []
-      assert OpenVzDriver.filter_executable_files('') == []
-      assert OpenVzDriver.filter_executable_files('/home/image.jpg') == []
-    end
-
   end
 end
+
+
+

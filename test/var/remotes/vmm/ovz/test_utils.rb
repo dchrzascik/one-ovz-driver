@@ -1,20 +1,39 @@
 module OpenNebula
-
+  
   class TestUtils
+    # ids used in tests
+    VMID = 4900
+    CTID = 5590
+    
+    # resources
+    TEST_DISK = File.absolute_path "test/resources/disk.0"
+    TEST_CTX = File.absolute_path 'test/resources/disk.2'
 
-    def self.purge_ct(deploy_ctid)
-      if File.directory? "/vz/private/#{deploy_ctid}"
-        p "Deleting container: #{deploy_ctid}"
-        `sudo vzctl stop #{deploy_ctid} && sudo vzctl delete #{deploy_ctid}`
-      end
+    # absolute paths describing openvz env
+    CT_CACHE = "/vz/template/cache/#{CTID}.tar.gz"
+    VM_DATASTORE = "/vz/one/datastores/0/#{VMID}"
+    VM_DISK = "#{VM_DATASTORE}/disk.0"
+    VM_CTX = "#{VM_DATASTORE}/disk.2.iso"
+    
+    def self.ct_exists? ctid
+      `sudo vzctl status #{ctid}`.split[2] == 'exist'
+    end
+    
+    def self.purge_ct(ctid)
+      `sudo vzctl stop #{ctid} && sudo vzctl destroy #{ctid}` if self.ct_exists? ctid
     end
 
-    def self.purge_template(cache)
-      if File.exist? cache
-        p "Deleting cache: #{cache}"
-        `sudo rm -rf #{cache}`
-      end
+    def self.purge(file)
+      `sudo rm -rf #{file}` if File.exists? file
     end
+
+    def self.mkdir(dir)
+      `sudo mkdir -p #{dir}`
+    end
+    
+    def self.symlink(src, dst)
+      `sudo ln -s #{src} #{dst}`
+    end
+
   end
-
 end

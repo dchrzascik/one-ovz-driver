@@ -1,6 +1,6 @@
 module OpenNebula
 	class OpenNebulaConfig
-
+	  
 		def initialize(config_file)
 			@config = File.read config_file
 		end

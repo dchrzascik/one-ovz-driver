@@ -1,5 +1,6 @@
 require 'rake'
 require 'rake/testtask'
+require 'fileutils'
 load './config'
 
 task :default => [:test]
@@ -49,5 +50,29 @@ end
 task :gems do
   %w(openvz_one flexmock systemu xml-mapping).each do |dependency|
     sh "gem install #{dependency}"
+  end
+end
+
+task :doc do
+  sh "rdoc -x _test.rb"
+end
+
+# Copies driver files to OpenNebula directories
+task :install do
+  dirs = {}
+  # get dirs to which files have to be copied
+  if !ENV['ONE_LOCATION']
+    puts "Installing system wide"
+    dirs = {'var' => '/var/lib/one', 'etc' => '/etc/one', 'share' => '/usr/share/one'}
+  else
+    puts "Installing self-contained"
+    %w(var etc share).each {|x| dirs[x] = File.join(ENV['ONE_LOCATION'], x)}
+  end
+  
+  # copy project files to their corresponding ONE dirs
+  dirs.each_pair do |key, dir|
+    files = Dir.glob("src/#{key}/*")
+    FileUtils.cp_r files, dir
+    puts "files from #{files} were copied to directory: #{dir}"
   end
 end
