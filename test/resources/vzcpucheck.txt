@@ -1,0 +1,2 @@
+Current CPU utilization: 4000
+Power of the node: 109946

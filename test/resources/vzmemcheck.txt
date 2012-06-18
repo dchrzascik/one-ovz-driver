@@ -1,0 +1,4 @@
+Output values in %
+ LowMem  LowMem     RAM MemSwap MemSwap   Alloc   Alloc   Alloc
+   util  commit    util    util  commit    util  commit   limit
+   6.18 67747481283262.09    6.36    1.18 3922547387167512.00    1.95 3922547387167512.00 3922547387167512.00
