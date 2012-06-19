@@ -24,7 +24,10 @@ Current driver version: 1.0, which supports:
 See project [wiki pages](https://github.com/dchrzascik/one-ovz-driver/wiki)
 
 ## Authors
- * [Marta Ryłko](https://github.com/martar)
- * [Radosław Morytko](https://github.com/radekmorytko)
- * [Dariusz Chrząścik](https://github.com/dchrzascik)
+ * Development
+    * [Marta Ryłko](https://github.com/martar)
+    * [Radosław Morytko](https://github.com/radekmorytko)
+    * [Dariusz Chrząścik](https://github.com/dchrzascik)
+ * Supervision
+    * D.Eng. Marcin Jarząb
 
