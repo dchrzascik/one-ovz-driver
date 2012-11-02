@@ -27,16 +27,16 @@ class IMBaseDriver
 	def self.print
 		free_text  = `#{@@free_cmd}`		
 		total_memory, used_memory, free_memory = IMBaseParser.memory_info(free_text)
-	    	puts "TOTAL_MEMORY=#{total_memory}"
-	    	puts "USED_MEMORY=#{used_memory}"
-	    	puts "FREE_MEMORY=#{free_memory}"
+	    	puts "TOTALMEMORY=#{total_memory}"
+	    	puts "USEDMEMORY=#{used_memory}"
+	    	puts "FREEMEMORY=#{free_memory}"
 		cpu_info_text = `#{@@cpu_info_cmd}`	
 		top_bin1_text  = `#{@@top_cmd}`	
-		free_cpu, used_cpu, cpu_speed = IMBaseParser.cpu_info(cpu_info_text, top_bin1_text)
-		puts "FREE_CPU=#{free_cpu}"
-		puts "USED_CPU=#{used_cpu}"
-
-		puts "CPU_SPEED=#{cpu_speed}"
+		free_cpu, used_cpu, cpu_speed, total_cpu = IMBaseParser.cpu_info(cpu_info_text, top_bin1_text)
+		puts "FREECPU=#{free_cpu}"
+		puts "USEDCPU=#{used_cpu}"
+		puts "TOTALCPU=#{total_cpu}"
+		puts "CPUSPEED=#{cpu_speed}"
 		proc_net_dev_text = `#{@@net_dev_cmd}`	
 		netrx, nettx  = IMBaseParser.in_out_bandwith(proc_net_dev_text)
 		puts "NETRX=#{netrx}"
@@ -55,8 +55,8 @@ class IMBaseParser
 	# * *Returns* :
 	# - total_memory, used_memory, free_memory parameters of system described by args as strings
 	def self.memory_info(free_text)
-		total_memory = free_text.grep(/Mem:?/)[0].split()[1]
-		used_memory, free_memory=free_text.grep(/buffers\/cache?/)[0].split().slice(2,2)
+		total_memory = free_text.lines.grep(/Mem:?/)[0].split()[1]
+		used_memory, free_memory=free_text.lines.grep(/buffers\/cache?/)[0].split().slice(2,2)
 		return total_memory.strip, used_memory.strip, free_memory.strip
 	end
 
@@ -70,15 +70,15 @@ class IMBaseParser
 	def self.cpu_info(cpu_info_text, top_bin1_text)
 		# learn how many virtual processors are they
 		# each processor in this file appear as a single line in a format: processor: processor_id
-		ncpus = cpu_info_text.grep(/processor?/).count
+		ncpus = cpu_info_text.lines.grep(/processor?/).count
 		total_cpu=ncpus*100
 		# cpu speed - is always equal for each core, so read the first one
-		cpu_speed = cpu_info_text.grep(/cpu MHz?/)[0].split(":")[1].strip
+		cpu_speed = cpu_info_text.lines.grep(/cpu MHz?/)[0].split(":")[1].strip
 		free_cpu, used_cpu = nil, nil
-		idle = top_bin1_text.grep(/^Cpu?/)[0].split(':')[1].split(',').grep(/.%id/)[0].split('%')[0]
+		idle = top_bin1_text.lines.grep(/^Cpu?/)[0].split(':')[1].split(',').grep(/.%id/)[0].split('%')[0]
 		free_cpu = idle.to_f * total_cpu.to_f / 100
 		used_cpu = total_cpu.to_f - free_cpu
-		return free_cpu.to_s, used_cpu.to_s, cpu_speed.to_s
+		return free_cpu.to_s, used_cpu.to_s, cpu_speed.to_s, total_cpu.to_s
 	end
 
 	# Gathers information about in and out bandwith 

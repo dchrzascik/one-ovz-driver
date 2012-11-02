@@ -73,7 +73,7 @@ class IMOpenVZParser
 
 	# TODO write doc
 	def self.parse_memcheck(vzmemcheck_text)
-		vzmemcheck_text = vzmemcheck_text.drop(3)
+		vzmemcheck_text = vzmemcheck_text.lines.drop(3)
 		vzmemcheck =  vzmemcheck_text.to_s.split
 		alloc_util, alloc_commit, alloc_limit = vzmemcheck[5], vzmemcheck[6], vzmemcheck[7]
 	end
