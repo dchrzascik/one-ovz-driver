@@ -12,7 +12,7 @@ module OpenNebula
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
       OpenVZ::Util.execute "sudo brctl addbr ovz-test-br0"
-
+      
       # mock_tmm
       TestUtils.mkdir TestUtils::VM_DATASTORE
       TestUtils.symlink TestUtils::TEST_CTX, TestUtils::VM_CTX
@@ -31,14 +31,13 @@ module OpenNebula
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
       ctid = OpenVzDriver.ctid @inventory, TestUtils::VMID.to_s
       container = OpenVZ::Container.new(ctid)
-
+ 
       # deploy
       assert_equal ctid, @driver.deploy(@open_vz_data, container)
       assert @open_vz_data.context == {}
       assert_equal true, TestUtils.ct_exists?(ctid)
       # ensure that we've cleaned up environment
       assert_equal false, File.exists?(TestUtils::CT_CACHE)
-
 
       # poll
       status = @driver.poll container
@@ -54,7 +53,7 @@ module OpenNebula
       out = @driver.reboot container
       assert_match(/Restarting/, out)
       assert_equal true, TestUtils.ct_exists?(ctid)
-     
+      
       # save
       @driver.save container, CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
@@ -74,7 +73,7 @@ module OpenNebula
       @driver.cancel container
       assert_match(/deleted/, `sudo vzctl status #{ctid}`)
     end
-    
+     
     def test_driver_with_ctx
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")
@@ -91,6 +90,6 @@ module OpenNebula
       assert @open_vz_data.context != nil
       assert "tst\n" == container.command('cat /tmp/tst')
     end
-    
+
   end
 end

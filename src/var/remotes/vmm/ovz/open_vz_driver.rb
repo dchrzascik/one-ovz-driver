@@ -138,6 +138,8 @@ module OpenNebula
       files_cmd = files.inject("") {|current, f| current + " -C " + File.dirname(f) + " " + File.basename(f)}
       
       OpenNebula.exec_and_log "sudo tar xzf #{source_file} #{files_cmd}"
+      # directory where vzctl mounts ve's private area
+      OpenNebula.exec_and_log "sudo mkdir /vz/root/#{ctid}"
       
       container = OpenVZ::Container.new(ctid)
       container.restore checkpoint_file

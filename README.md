@@ -15,9 +15,9 @@ The project is licensed under _Apache License Version 2.0_
 
 ### Version
 
-Current driver version: 1.0, which supports:
- * OpenNebula 3.4
- * OpenVZ version same as in [ruby-openvz](https://github.com/sts/ruby-openvz)
+Current driver version: 1.1, which supports:
+ * OpenNebula 3.8
+ * OpenVZ kernel version: 2.6.32-042stab062.2
  
 ### Installation notes and documenation
 
