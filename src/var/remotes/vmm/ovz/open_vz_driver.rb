@@ -58,8 +58,8 @@ module OpenNebula
       # set up networking
       apply_network_settings container, open_vz_data.networking
 
-      # and contextualise it
-      contextualise container, open_vz_data.context_disk, open_vz_data.context
+      # and contextualise it if user provided any context info
+      contextualise container, open_vz_data.context_disk, open_vz_data.context if open_vz_data.context != {}
       
       container.ctid
     rescue RuntimeError => e
@@ -297,11 +297,6 @@ module OpenNebula
     #   - +iso_file+ -> Path to ISO file which holds context data. An instance of String class
     #   - +context+ -> Context parameters. An instance of Hash class
     def contextualise(container, iso_file, context)
-      if context == {}
-        OpenNebula.log_debug "No context provided"
-        return
-      end
-
       OpenNebula.log_debug "Applying contextualisation using #{iso_file}, files: #{context[:files]}"
 
       # TODO such hardcoded paths have to be moved out to some configuration files

@@ -11,7 +11,7 @@ module OpenNebula
     def setup
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
-      OpenVZ::Util.execute "sudo brctl addbr br0"
+      OpenVZ::Util.execute "sudo brctl addbr ovz-test-br0"
 
       # mock_tmm
       TestUtils.mkdir TestUtils::VM_DATASTORE
@@ -23,7 +23,7 @@ module OpenNebula
       TestUtils.purge TestUtils::VM_DATASTORE
       TestUtils.purge_ct TestUtils::CTID
       TestUtils.purge CHECKPOINT_DST
-      OpenVZ::Util.execute "sudo brctl delbr br0"
+      OpenVZ::Util.execute "sudo brctl delbr ovz-test-br0"
     end
 
     def test_driver
