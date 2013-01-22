@@ -3,13 +3,22 @@ require 'rake/testtask'
 require 'fileutils'
 load './config'
 
-task :default => [:test]
+task :default => :unit_tests
+
+task :unit_tests => :init_test
+task :integration_tests => :init_test
+task :test_all => [:unit_tests, :integration_tests]
+
+# constants
+TEST_DIR = 'test'
+UNIT_TEST_DIR = TEST_DIR + '/unit'
+INTEGRATION_TEST_DIR = TEST_DIR + '/integration'
 
 def test(t, files)
   t.verbose = true
   t.warning = true
   t.test_files = FileList.new(files)
-  t.libs = %W(lib src/var/remotes/vmm/ovz/ test/var/remotes/vmm/ovz/)
+  t.libs = %W(lib src/var/remotes/vmm/ovz test/util src/var/remotes/im/ovz.d)
 end
 
 # Ensure that env is correctly set up => there is appropriate ct image
@@ -20,18 +29,15 @@ task :init_test do
   sh "wget -O #{disk} http://download.openvz.org/template/precreated/contrib/slackware-10.2-i386-minimal.tar.gz"
 end
 
-# Run only mock-based test on local machine
-# Note that running tests make sense only on openvz-enabled machine
-Rake::TestTask.new(:test) do |t, args|
-  test(t, "test/var/remotes/vmm/ovz/*_test.rb")
+Rake::TestTask.new(:unit_tests) do |t|
+  puts "Running unit tests"
+  test(t, UNIT_TEST_DIR + "/**/*_test.rb")
 end
-task :test => :init_test
 
-# Run both integration tests and mock-based on local machine
-Rake::TestTask.new(:test_all) do |t|
-  test(t, "test/var/remotes/vmm/ovz/*_test_module.rb")
+Rake::TestTask.new(:integration_tests) do |t|
+  puts "Running integration tests"
+  test(t, INTEGRATION_TEST_DIR + "/**/*_test.rb")
 end
-task :test_all => [:test]
 
 # Copy whole project to remote directory @ ovz host
 # task may be used when nfs isn't set up
@@ -66,9 +72,9 @@ task :install do
     dirs = {'var' => '/var/lib/one', 'etc' => '/etc/one', 'share' => '/usr/share/one'}
   else
     puts "Installing self-contained"
-    %w(var etc share).each {|x| dirs[x] = File.join(ENV['ONE_LOCATION'], x)}
+    %w(var etc share).each { |x| dirs[x] = File.join(ENV['ONE_LOCATION'], x) }
   end
-  
+
   # copy project files to their corresponding ONE dirs
   dirs.each_pair do |key, dir|
     files = Dir.glob("src/#{key}/*")
@@ -76,3 +82,4 @@ task :install do
     puts "files from #{files} were copied to directory: #{dir}"
   end
 end
+

@@ -8,15 +8,15 @@ module OpenNebula
     def test_archive_type
       # assertions
       assert_equal 'tar.gz', FileUtils.archive_type(TestUtils::TEST_DISK)
-      
+
       # behaviour when testing non-archive file
       assert_raises RuntimeError do
         FileUtils.archive_type TestUtils::TEST_CTX
       end
     end
-    
+
     def test_filter_executables
-      files = '/root/sample_cd.iso /home/radek/lubie_w_czoko/wallpaper.jpg /usr/local/executable.sh /tmp/yaexecutable.ksh'
+      files = '/root/sample_cd.iso /home/radek/wallpaper.jpg /usr/local/executable.sh /tmp/yaexecutable.ksh'
       expected_files = %w(/usr/local/executable.sh /tmp/yaexecutable.ksh)
 
       assert_equal expected_files, FileUtils.filter_executables(files)

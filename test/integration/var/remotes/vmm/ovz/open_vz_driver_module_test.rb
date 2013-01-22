@@ -7,12 +7,12 @@ require 'flexmock/test_unit'
 module OpenNebula
   class OpenVzDriverTestModule < Test::Unit::TestCase
     CHECKPOINT_DST = "/tmp/checkpoint"
-    
+
     def setup
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
       OpenVZ::Util.execute "sudo brctl addbr ovz-test-br0"
-      
+
       # mock_tmm
       TestUtils.mkdir TestUtils::VM_DATASTORE
       TestUtils.symlink TestUtils::TEST_CTX, TestUtils::VM_CTX
@@ -31,7 +31,7 @@ module OpenNebula
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_no_context_test.xml")
       ctid = OpenVzDriver.ctid @inventory, TestUtils::VMID.to_s
       container = OpenVZ::Container.new(ctid)
- 
+
       # deploy
       assert_equal ctid, @driver.deploy(@open_vz_data, container)
       assert @open_vz_data.context == {}
@@ -53,27 +53,27 @@ module OpenNebula
       out = @driver.reboot container
       assert_match(/Restarting/, out)
       assert_equal true, TestUtils.ct_exists?(ctid)
-      
+
       # save
       @driver.save container, CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_equal true, File.exists?(CHECKPOINT_DST)
-      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint" )
+      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint")
       assert_match(/running/, `sudo vzctl status #{ctid}`)
-      
+
       # destroy & restore
       TestUtils.purge_ct ctid
       assert_equal false, TestUtils.ct_exists?(ctid)
       @driver.restore CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_match(/running/, `sudo vzctl status #{ctid}`)
-      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint" )
+      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint")
 
       # restore container to previous state && cancel
       @driver.cancel container
       assert_match(/deleted/, `sudo vzctl status #{ctid}`)
     end
-     
+
     def test_driver_with_ctx
       # init
       @open_vz_data = OpenVzData.new(File.new "test/resources/deployment_file_test.xml")

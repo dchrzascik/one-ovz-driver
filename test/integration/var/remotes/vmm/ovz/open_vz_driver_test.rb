@@ -6,7 +6,7 @@ require 'flexmock/test_unit'
 
 module OpenNebula
   class OpenVzDriverTest < Test::Unit::TestCase
-        
+
     def setup
       # mocks
       @container = flexmock("container")
@@ -16,7 +16,7 @@ module OpenNebula
       @driver = OpenVzDriver.new()
     end
 
-    def test_deploy
+    def test_deployl
       # set up mocks
       @container.should_receive(:ctid).times(3).and_return(TestUtils::CTID)
       @container.should_receive(:create).times(1)
@@ -38,15 +38,15 @@ module OpenNebula
     ensure
       TestUtils.purge TestUtils::VM_DATASTORE
     end
-    
-    def test_poll    
+
+    def test_poll
       load 'test/resources/poll_data.rb'
-      
+
       @container.should_receive(:command).times(4).and_return(CPU_INFO, CPU_USAGE, NET_USAGE, MEMORY_USAGE)
       @container.should_receive(:status).times(1).and_return(%w(exist unmounted running))
-      
-      expected_status = {:state => 'a', :usedmemory => 3665112, :usedcpu => 66.8, :netrx =>972526934, :nettx =>39121984}
-      
+
+      expected_status = {:state => 'a', :usedmemory => 3665112, :usedcpu => 66.8, :netrx => 972526934, :nettx => 39121984}
+
       assert_equal expected_status, @driver.poll(@container)
 
       # try on deleted container, we should get nothing here
