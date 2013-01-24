@@ -1,7 +1,6 @@
 require 'file_utils'
 require 'test_utils'
 require 'test/unit'
-require 'flexmock/test_unit'
 
 module OpenNebula
   class FileUtilsTest < Test::Unit::TestCase

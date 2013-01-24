@@ -16,23 +16,26 @@
 
 $: << "#{File.dirname(__FILE__)}/../../"
 
+require 'rubygems'
 require 'openvz'
+require 'lib/parsers/im'
 require 'file_utils'
 require 'open_vz_data'
 require 'scripts_common'
 
 module OpenNebula
-  
+
   # OpenVzDriver represents driver capable of performing basic operations characterized by OpenNebula vmm specification
   #
   class OpenVzDriver
 
     # OpenVzDriver exception class
-    class OpenVzDriverError < StandardError; end
+    class OpenVzDriverError < StandardError;
+    end
 
     # a directory where the context iso img is mounted
     CTX_ISO_MNT_DIR = '/mnt/isotmp'
-    
+
     # enforce using sudo since opennebula runs script as a oneadmin
     OpenVZ::Util.enforce_sudo = true
 
@@ -52,7 +55,7 @@ module OpenNebula
       options = process_options open_vz_data.raw, {:ostemplate => template_name}
 
       # create and run container
-      container.create( options )
+      container.create(options)
       container.start
 
       # set up networking
@@ -60,13 +63,14 @@ module OpenNebula
 
       # and contextualise it if user provided any context info
       contextualise container, open_vz_data.context_disk, open_vz_data.context if open_vz_data.context != {}
-      
+
       container.ctid
     rescue RuntimeError => e
       raise OpenVzDriverError, "Container #{container.ctid} can't be deployed. Details: #{e.message}"
     ensure
       # cleanup template cache - we don't need it anymore
       File.delete template_cache if template_cache and File.exists? template_cache
+      # TODO cleanup after a failed attempt to deploy, e.g. destroy a  partly-deployed container
     end
 
     # Sends shutdown signal to a VM
@@ -96,7 +100,7 @@ module OpenNebula
     # Note that the container isn't removed only its copy is made
     def save(container, destination_file)
       OpenNebula.log_debug "Saving container: #{container.ctid} to #{destination_file}"
-      
+
       # to preserve the current CT state we've got to:
       # - save the latest ct checkpoint
       # - save the ct config file
@@ -105,12 +109,12 @@ module OpenNebula
       # note that I don't want to preserve absolute paths such as /vz/private since it may be installation specifc
       container.start if container.status[2] == 'down'
 
-      checkpoint_file = "/tmp/#{container.ctid}-checkpoint" 
+      checkpoint_file = "/tmp/#{container.ctid}-checkpoint"
       container.checkpoint checkpoint_file
-      
+
       files = %W(#{checkpoint_file} /etc/vz/conf/#{container.ctid}.conf /vz/private/#{container.ctid})
-      files_cmd = files.inject("") {|current, f| current + " -C " + File.dirname(f) + " " + File.basename(f)}
-            
+      files_cmd = files.inject("") { |current, f| current + " -C " + File.dirname(f) + " " + File.basename(f) }
+
       OpenNebula.exec_and_log "sudo tar czf #{destination_file} #{files_cmd}"
 
       # after saving ct state, container is suspended so start it
@@ -124,23 +128,23 @@ module OpenNebula
     # Restores a VM to a previous saved state
     def restore(source_file)
       OpenNebula.log_debug "Restoring container from #{source_file}"
-      
+
       # firstly, get the container id
       # it's obtained by getting top level directory name which is number in our convention (see save method)
       files = OpenVZ::Util.execute "tar --exclude='*/*' -tf #{source_file}"
-      ctid = files.split("\n").find {|t| t=~ /\d+\//}.chomp('/')
+      ctid = files.split("\n").find { |t| t=~ /\d+\// }.chomp('/')
       OpenNebula.log_debug "During restoring found ctid: #{ctid}"
-      
+
       # unpack files to their corresponding dirs
       # TODO elimnate hardcoded paths
-      checkpoint_file = "/tmp/#{ctid}-checkpoint" 
+      checkpoint_file = "/tmp/#{ctid}-checkpoint"
       files = %W(#{checkpoint_file} /etc/vz/conf/#{ctid}.conf /vz/private/#{ctid})
-      files_cmd = files.inject("") {|current, f| current + " -C " + File.dirname(f) + " " + File.basename(f)}
-      
+      files_cmd = files.inject("") { |current, f| current + " -C " + File.dirname(f) + " " + File.basename(f) }
+
       OpenNebula.exec_and_log "sudo tar xzf #{source_file} #{files_cmd}"
       # directory where vzctl mounts ve's private area
       OpenNebula.exec_and_log "sudo mkdir /vz/root/#{ctid}"
-      
+
       container = OpenVZ::Container.new(ctid)
       container.restore checkpoint_file
     rescue RuntimeError => e
@@ -148,7 +152,7 @@ module OpenNebula
     ensure
       OpenNebula.exec_and_log "sudo rm -rf #{checkpoint_file}" if checkpoint_file and File.exists? checkpoint_file
     end
-    
+
     # Performs live migration of a VM
     def migrate(container, host)
       OpenNebula.log_debug "Migrating container: #{container.ctid} to host: #{host}"
@@ -159,7 +163,7 @@ module OpenNebula
       raise OpenVzDriverError, "Container #{container.ctid} can't be migrated. Details: #{e.message}"
     end
 
-    def reboot(container)  
+    def reboot(container)
       OpenNebula.log_debug "Rebooting container: #{container.ctid}"
       container.restart
     rescue RuntimeError => e
@@ -172,9 +176,9 @@ module OpenNebula
     # - +container+ -> reference to container. An instance of OpenVZ::Container class
     def poll(container)
       info = Hash.new 0
-      
+
       # state
-      states = {'exist' =>  'a', 'deleted' => 'd', 'suspended' => 'p'}
+      states = {'exist' => 'a', 'deleted' => 'd', 'suspended' => 'p'}
       states.default = '-'
       status = container.status
       # state can be either active or deleted
@@ -189,26 +193,20 @@ module OpenNebula
       # ex. usedcpu=200 when there are 2 fully loaded cpus
       # currently i get only average pcpu and multiply it by number of cpus
       out = (container.command "cat /proc/cpuinfo").split
-      cpu_amount = out.find_all {|line| /processor/ =~ line}.size
+      cpu_amount = out.find_all { |line| /processor/ =~ line }.size
 
       out = (container.command "ps axo pcpu=").split
-      info[:usedcpu] = cpu_amount * out.inject(0.0) {|sum, current|sum + current.to_f}
-      
+      info[:usedcpu] = cpu_amount * out.inject(0.0) { |sum, current| sum + current.to_f }
+
       # net transmit & receive
-      out = container.command "cat /proc/net/dev"
-      # i'am wondering how long this shit will work
-      out.each_line do |line|
-        net = /\s*(?<interface>\w+)\s*:\s*(?<receive>\d+)(\s+\d+){7}\s+(?<transmit>\d+)/.match(line)
-        # omit loopback interface
-        next if !net || net[:interface] == "lo"        
-        info[:netrx] += net[:receive].to_i
-        info[:nettx] += net[:transmit].to_i
-      end
-            
+      netrx, nettx = IMBaseParser.in_out_bandwith container.command "cat /proc/net/dev"
+      info[:netrx] += netrx.to_i
+      info[:nettx] += nettx.to_i
+
       # computer container memory usage
-      out = container.command  "free -k"
-      info[:usedmemory] = /Mem:\s+\d+\s+(?<used>\d+)/.match(out)[:used].to_i
-            
+      _, used_memory, _ = IMBaseParser.memory_info container.command "free -k"
+      info[:usedmemory] = used_memory.to_i
+
       info
     rescue RuntimeError => e
       raise OpenVzDriverError, "Can't get container #{container.ctid} status. Details: #{e.message}"
@@ -225,14 +223,14 @@ module OpenNebula
     def self.ctid(inventory, vmid, offset = 690)
       # returned id is equal to vmid + offset. If there is already such id, then the nearest one is taken
       # we internally operate on ints
-      ct_ids = inventory.ids.map { |e| e.to_i  }
+      ct_ids = inventory.ids.map { |e| e.to_i }
       proposed = vmid.to_i
-      
+
       # attempty to return propsed id
       proposed += offset
       return proposed.to_s unless ct_ids.include? proposed
       # if that id is already taken chose the closest one to avoid conflict 
-      ct_ids = ct_ids.find_all{|x| x >= proposed }
+      ct_ids = ct_ids.find_all { |x| x >= proposed }
 
       # return string since ruby-openvz takes for granted that id is a string
       # note that ct_ids are assumed to be sorted in ascending order
@@ -258,7 +256,7 @@ module OpenNebula
       container.command "ifconfig eth0 #{networking[:ip]}"
       container.command "ifconfig eth0 up"
     end
-    
+
     # Helper method used for template creation by symlinking it to the vm's datastore disk location
     #
     # * *Args* :
@@ -280,12 +278,12 @@ module OpenNebula
     #   - +raw+ -> The container to contextualise. An instance of OpenVZ::Container class
     #   - +options+ -> arbitrary data, ex ostemplate, ip_add
     def process_options(raw, options = {})
-      raw = raw.merge(options)
-      
+      raw.merge!(options)
+
       # normalize all keys to lowercase
       new_hash = {}
-      raw.each {|k, v| new_hash.merge!({k.downcase => v})}
-      
+      raw.each { |k, v| new_hash.merge!(k.to_s.downcase.to_sym => v) }
+
       # filter out type -> it is only meaningful to opennebula
       new_hash.delete(:type)
 

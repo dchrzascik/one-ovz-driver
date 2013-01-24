@@ -4,7 +4,11 @@
 # note that you may need password, unless you have passwordless ssh access
 DOMAIN = 'user@host'
 
-# directory where remote test are located
-# used when running remote tests or copying sources
+# If you want to run integration tests, you must copy/download the driver to/on
+# the openvz host to REMOT_DIRECTORY. Then, you can synchronise source code and
+# run all the tests from another machine by invoking in the main directory:
+# $ rake remote_test
+# This will cause source synchronisation (via rsync) and run tests (via ssh) at
+# DOMAIN:REMOTE_DIR
 REMOTE_DIR = 'remote-directory'
 

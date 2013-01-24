@@ -29,14 +29,18 @@ task :init_test do
   sh "wget -O #{disk} http://download.openvz.org/template/precreated/contrib/slackware-10.2-i386-minimal.tar.gz"
 end
 
-Rake::TestTask.new(:unit_tests) do |t|
-  puts "Running unit tests"
-  test(t, UNIT_TEST_DIR + "/**/*_test.rb")
+task :unit_tests do
+  Rake::TestTask.new(:unit_tests) do |t|
+    puts "Running unit tests"
+    test(t, UNIT_TEST_DIR + "/**/*_test.rb")
+  end
 end
 
-Rake::TestTask.new(:integration_tests) do |t|
-  puts "Running integration tests"
-  test(t, INTEGRATION_TEST_DIR + "/**/*_test.rb")
+task :integration_tests do
+  Rake::TestTask.new(:integration_tests) do |t|
+    puts "Running integration tests"
+    test(t, INTEGRATION_TEST_DIR + "/**/*_test.rb")
+  end
 end
 
 # Copy whole project to remote directory @ ovz host
@@ -46,10 +50,13 @@ task :copy, :dst do |t, args|
   sh "rsync -r --exclude '.git' \`pwd\`\/ #{DOMAIN}:#{dst}"
 end
 
-# Run test remotly on openvz cluster node
+# Synchronise and run all tests remotly on openvz cluster node
 # REMOTE_DIR is used as a default dir
 task :remote_test do
-  sh "ssh #{DOMAIN} \"cd #{REMOTE_DIR} && rvmsudo rake\""
+  sh "rsync --verbose --progress --compress --rsh=/usr/bin/ssh " +
+         "--recursive --times --perms --links --delete " +
+         "--exclude \".git\" --exclude \".idea\" * #{DOMAIN}:#{REMOTE_DIR}"
+  sh "ssh #{DOMAIN} \"cd #{REMOTE_DIR} && sudo rake test_all\""
 end
 
 # Install required gems

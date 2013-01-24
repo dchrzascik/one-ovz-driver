@@ -12,8 +12,8 @@ module OpenNebula
       free_text = File.read("test/resources/free.txt")
       total_memory, used_memory, free_memory = IMBaseParser.memory_info(free_text)
       assert_equal "498572", total_memory
-      assert_equal "239880", used_memory
-      assert_equal "258692", free_memory
+      assert_equal "480776", used_memory
+      assert_equal "17796", free_memory
     end
 
     def test_cpu_info
@@ -34,11 +34,10 @@ module OpenNebula
     end
 
     #TODO decide if or where this test should be moved
-    def test_print
-      skip "Non unit test"
-      assert_nothing_raised do
-        puts IMBaseDriver.print
-      end
-    end
+    #def test_print
+    #  assert_nothing_raised do
+    #    puts IMBaseDriver.print
+    # end
+    #end
   end
 end

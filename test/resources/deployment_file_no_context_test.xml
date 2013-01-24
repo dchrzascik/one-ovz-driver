@@ -17,7 +17,7 @@
   <MEMORY><![CDATA[128]]></MEMORY>
   <NAME><![CDATA[one-49]]></NAME>
   <NIC>
-    <BRIDGE><![CDATA[br0]]></BRIDGE>
+    <BRIDGE><![CDATA[ovz-test-br0]]></BRIDGE>
     <IP><![CDATA[192.168.0.106]]></IP>
     <MAC><![CDATA[02:00:c0:a8:00:6a]]></MAC>
     <NETWORK><![CDATA[Public-Update]]></NETWORK>

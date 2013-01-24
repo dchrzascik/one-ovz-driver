@@ -14,6 +14,7 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+require 'rubygems'
 require 'xml/mapping'
 require 'xml/mapping/base'
 
@@ -22,9 +23,9 @@ module XML
     module ClassMethods
       # Allows XML::Mapping to load data from stream
       # by default only loading from xml string / file is allowed
-      def load_from_stream(stream, options={:mapping=>:_default})
+      def load_from_stream(stream, options={:mapping => :_default})
         xml = REXML::Document.new(stream)
-        load_from_xml xml.root, :mapping=>options[:mapping]
+        load_from_xml xml.root, :mapping => options[:mapping]
       end
     end
   end
@@ -36,12 +37,12 @@ module OpenNebula
   # Most of its contents is derived from deployment_file and opennebula configuration 
   class OpenVzData
     include XML::Mapping
-    
+
     # RawNode
     # Helper class used for mapping RAW tag which may contain arbitrary data
     class RawNode < XML::Mapping::SingleAttributeNode
       def initialize(*args)
-        path,*args = super(*args)
+        path, *args = super(*args)
         @path = XML::XXPath.new(path + "/*")
         args
       end
@@ -79,7 +80,7 @@ module OpenNebula
       # TODO such hardcoded paths have to be moved out to some configuration files
       "/vz/one/datastores/0/#{vmid}/disk.0"
     end
-    
+
     def context_disk
       # TODO such hardcoded paths have to be moved out to some configuration files
       iso = Dir.glob("/vz/one/datastores/0/#{vmid}/*.iso")

@@ -25,7 +25,7 @@
   </DISK>
   <NAME><![CDATA[one-51]]></NAME>
   <NIC>
-    <BRIDGE><![CDATA[br0]]></BRIDGE>
+    <BRIDGE><![CDATA[ovz-test-br0]]></BRIDGE>
     <IP><![CDATA[10.1.1.2]]></IP>
     <MAC><![CDATA[02:00:0a:01:01:02]]></MAC>
     <NETWORK><![CDATA[Ranged lan with a bridge]]></NETWORK>

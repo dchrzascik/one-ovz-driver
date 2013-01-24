@@ -6,8 +6,8 @@ module OpenNebula
     CTID = 5590
 
     # resources
-    TEST_DISK = File.absolute_path "test/resources/disk.0"
-    TEST_CTX = File.absolute_path 'test/resources/disk.2'
+    TEST_DISK = File.expand_path(File.dirname("test/resources/unused_name")) + "/disk.0"
+    TEST_CTX = File.expand_path(File.dirname("test/resources/unused_name")) + "/disk.2"
 
     # absolute paths describing openvz env
     CT_CACHE = "/vz/template/cache/#{CTID}.tar.gz"

@@ -16,7 +16,7 @@ module OpenNebula
       @driver = OpenVzDriver.new()
     end
 
-    def test_deployl
+    def test_deploy
       # set up mocks
       @container.should_receive(:ctid).times(3).and_return(TestUtils::CTID)
       @container.should_receive(:create).times(1)

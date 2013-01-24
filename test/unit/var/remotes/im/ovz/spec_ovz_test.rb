@@ -22,11 +22,11 @@ module OpenNebula
     end
 
     #TODO decide if or where this test should be moved
-    def test_cpu_power
-      skip "Non unit test"
-      assert_nothing_raised do
-        puts IMOpenVZDriver.print
-      end
-    end
+    #def test_cpu_power
+    #  skip "Non unit test"
+    #  assert_nothing_raised do
+    #    puts IMOpenVZDriver.print
+    #  end
+    #end
   end
 end
