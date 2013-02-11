@@ -61,7 +61,7 @@ end
 
 # Install required gems
 task :gems do
-  %w(openvz_one flexmock systemu xml-mapping).each do |dependency|
+  %w(openvz flexmock systemu xml-mapping).each do |dependency|
     sh "gem install #{dependency}"
   end
 end
