@@ -6,7 +6,7 @@ require 'flexmock/test_unit'
 
 module OpenNebula
   class OpenVzDriverTestModule < Test::Unit::TestCase
-    CHECKPOINT_DST = "/tmp/checkpoint"
+    CHECKPOINT_DST = "/tmp/checkpoint" + '-' + TestUtils::CTID.to_s
 
     def setup
       @inventory = OpenVZ::Inventory.new
@@ -54,20 +54,17 @@ module OpenNebula
       assert_match(/Restarting/, out)
       assert_equal true, TestUtils.ct_exists?(ctid)
 
-      # save
+      # save (suspend)
       @driver.save container, CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_equal true, File.exists?(CHECKPOINT_DST)
-      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint")
-      assert_match(/running/, `sudo vzctl status #{ctid}`)
+      assert_match(/unmounted down/, `sudo vzctl status #{ctid}`)
 
-      # destroy & restore
-      TestUtils.purge_ct ctid
-      assert_equal false, TestUtils.ct_exists?(ctid)
-      @driver.restore CHECKPOINT_DST
+      # restore
+      @driver.restore container, CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_match(/running/, `sudo vzctl status #{ctid}`)
-      assert_equal false, File.exists?("/tmp/#{container.ctid}-checkpoint")
+      assert_equal false, File.exists?(CHECKPOINT_DST)
 
       # restore container to previous state && cancel
       @driver.cancel container

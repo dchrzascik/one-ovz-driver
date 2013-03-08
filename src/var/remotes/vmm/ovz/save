@@ -25,7 +25,7 @@ driver = OpenNebula::OpenVzDriver.new
 
 # setup container
 ctid = ARGV[0]
-destination_file = ARGV[1]
+destination_file = ARGV[1] + '-' + ctid
 container = OpenVZ::Container.new(ctid)
 
 # final step

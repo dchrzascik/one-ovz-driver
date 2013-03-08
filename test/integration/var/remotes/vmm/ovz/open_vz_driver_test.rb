@@ -22,7 +22,7 @@ module OpenNebula
       @container.should_receive(:create).times(1)
       @container.should_receive(:start).times(1)
       @container.should_receive(:command).times(2)
-      @container.should_receive(:add_veth).times(1)
+      @container.should_receive(:set).times(1)
 
       @open_vz_data.should_receive(:disk).times(1).and_return(TestUtils::TEST_DISK)
       @open_vz_data.should_receive(:raw).times(1).and_return({})

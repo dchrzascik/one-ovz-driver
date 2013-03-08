@@ -96,61 +96,24 @@ module OpenNebula
       raise OpenVzDriverError, "Container #{container.ctid} can't be canceled. Details: #{e.message}"
     end
 
-    # Saves the state of a Vm
-    # Note that the container isn't removed only its copy is made
+    # Suspends a VM
     def save(container, destination_file)
       OpenNebula.log_debug "Saving container: #{container.ctid} to #{destination_file}"
 
-      # to preserve the current CT state we've got to:
-      # - save the latest ct checkpoint
-      # - save the ct config file
-      # - save the /vz/private/ctid
-      # to do so, the archive with above data will be created
-      # note that I don't want to preserve absolute paths such as /vz/private since it may be installation specifc
-      container.start if container.status[2] == 'down'
+      container.checkpoint destination_file
 
-      checkpoint_file = "/tmp/#{container.ctid}-checkpoint"
-      container.checkpoint checkpoint_file
-
-      files = %W(#{checkpoint_file} /etc/vz/conf/#{container.ctid}.conf /vz/private/#{container.ctid})
-      files_cmd = files.inject("") { |current, f| current + " -C " + File.dirname(f) + " " + File.basename(f) }
-
-      OpenNebula.exec_and_log "sudo tar czf #{destination_file} #{files_cmd}"
-
-      # after saving ct state, container is suspended so start it
-      container.start
     rescue RuntimeError => e
       raise OpenVzDriverError, "Container #{container.ctid} can't be saved. Details: #{e.message}"
-    ensure
-      OpenNebula.exec_and_log "sudo rm -rf #{checkpoint_file}" if checkpoint_file and File.exists? checkpoint_file
     end
 
     # Restores a VM to a previous saved state
-    def restore(source_file)
+    def restore(container, source_file)
       OpenNebula.log_debug "Restoring container from #{source_file}"
 
-      # firstly, get the container id
-      # it's obtained by getting top level directory name which is number in our convention (see save method)
-      files = OpenVZ::Util.execute "tar --exclude='*/*' -tf #{source_file}"
-      ctid = files.split("\n").find { |t| t=~ /\d+\// }.chomp('/')
-      OpenNebula.log_debug "During restoring found ctid: #{ctid}"
+      container.restore source_file
 
-      # unpack files to their corresponding dirs
-      # TODO elimnate hardcoded paths
-      checkpoint_file = "/tmp/#{ctid}-checkpoint"
-      files = %W(#{checkpoint_file} /etc/vz/conf/#{ctid}.conf /vz/private/#{ctid})
-      files_cmd = files.inject("") { |current, f| current + " -C " + File.dirname(f) + " " + File.basename(f) }
-
-      OpenNebula.exec_and_log "sudo tar xzf #{source_file} #{files_cmd}"
-      # directory where vzctl mounts ve's private area
-      OpenNebula.exec_and_log "sudo mkdir /vz/root/#{ctid}"
-
-      container = OpenVZ::Container.new(ctid)
-      container.restore checkpoint_file
     rescue RuntimeError => e
       raise OpenVzDriverError, "Container #{container.ctid} can't be restored. Details: #{e.message}"
-    ensure
-      OpenNebula.exec_and_log "sudo rm -rf #{checkpoint_file}" if checkpoint_file and File.exists? checkpoint_file
     end
 
     # Performs live migration of a VM
@@ -248,9 +211,13 @@ module OpenNebula
     # - +networking+ -> hash with specified options
     def apply_network_settings container, networking
       OpenNebula.log_debug "Configuring network"
-      nic = {:ifname => 'eth0', :host_mac => 'FE:FF:FF:FF:FF:FF'}
+      nic_settings = {
+          # ifname and host_mac
+          :netif_add => "eth0,,,FE:FF:FF:FF:FF:FF,"
+      }
 
-      container.add_veth nic
+      container.set nic_settings
+
       OpenVZ::Util.execute "brctl addif #{networking[:bridge]} veth#{container.ctid}.0" unless networking[:bridge].nil?
 
       container.command "ifconfig eth0 #{networking[:ip]}"

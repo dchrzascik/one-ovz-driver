@@ -24,11 +24,17 @@ require 'open_vz_driver'
 driver = OpenNebula::OpenVzDriver.new
 
 # setup
-source_file = ARGV[0]
+source_file_prefix = ARGV[0]
+
+# extract container id from the filename
+source_file = OpenVZ::Util.execute "ls #{source_file_prefix}*"
+source_file.strip!
+ctid = source_file.split('-').last
+container = OpenVZ::Container.new(ctid)
 
 # final step
 begin
-  driver.restore source_file
+  driver.restore(container, source_file)
 rescue OpenNebula::OpenVzDriver::OpenVzDriverError => e
   p e.message
 end
