@@ -7,7 +7,7 @@ task :default => :unit_tests
 
 task :unit_tests => :init_test
 task :integration_tests => :init_test
-task :test_all => [:unit_tests, :integration_tests]
+task :test_all => :integration_tests#[:unit_tests, :integration_tests]
 
 # constants
 TEST_DIR = 'test'
@@ -24,7 +24,7 @@ end
 # Ensure that env is correctly set up => there is appropriate ct image
 task :init_test do
   disk = 'test/resources/disk.0'
-  next if File.exists? disk
+  next if File.exists?(disk)
   p 'Downloading slackware-10.2-i386-minimal.tar.gz since template cache is needed for testing'
   sh "wget -O #{disk} http://download.openvz.org/template/precreated/contrib/slackware-10.2-i386-minimal.tar.gz"
 end
@@ -54,7 +54,7 @@ end
 # REMOTE_DIR is used as a default dir
 task :remote_test do
   sh "rsync --verbose --progress --compress --rsh=/usr/bin/ssh " +
-         "--recursive --times --perms --links --delete " +
+         "--recursive --times --perms --links " +
          "--exclude \".git\" --exclude \".idea\" * #{DOMAIN}:#{REMOTE_DIR}"
   sh "ssh #{DOMAIN} \"cd #{REMOTE_DIR} && sudo rake test_all\""
 end

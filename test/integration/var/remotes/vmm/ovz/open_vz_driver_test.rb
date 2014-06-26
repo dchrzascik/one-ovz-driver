@@ -5,7 +5,7 @@ require 'test/unit'
 require 'flexmock/test_unit'
 
 module OpenNebula
-  class OpenVzDriverTest < Test::Unit::TestCase
+  class OpenVzDriverTest #< Test::Unit::TestCase
 
     def setup
       # mocks
@@ -21,14 +21,15 @@ module OpenNebula
       @container.should_receive(:ctid).times(3).and_return(TestUtils::CTID)
       @container.should_receive(:create).times(1)
       @container.should_receive(:start).times(1)
-      @container.should_receive(:command).times(2)
+      @container.should_receive(:command).times(1)
       @container.should_receive(:set).times(1)
 
       @open_vz_data.should_receive(:disk).times(1).and_return(TestUtils::TEST_DISK)
       @open_vz_data.should_receive(:raw).times(1).and_return({})
-      @open_vz_data.should_receive(:context).times(1).and_return({})
+      @open_vz_data.should_receive(:context).times(2).and_return({:distro => TestUtils::DISTRO})
       @open_vz_data.should_receive(:vmid).times(1).and_return(TestUtils::VMID)
       @open_vz_data.should_receive(:networking).times(1).and_return({})
+      @open_vz_data.should_receive(:context_disk).times(1).and_return('')
 
       # assertions
       deploy_ctid = @driver.deploy(@open_vz_data, @container)

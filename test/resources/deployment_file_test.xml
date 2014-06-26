@@ -4,6 +4,7 @@
     <HOSTNAME><![CDATA[MAINHOST]]></HOSTNAME>
     <IP_PRIVATE><![CDATA[192.168.0.106]]></IP_PRIVATE>
     <TARGET><![CDATA[hdb]]></TARGET>
+    <DISTRO>slackware-10.2-i386-minimal</DISTRO>
   </CONTEXT>
   <CPU><![CDATA[0.2]]></CPU>
   <DISK>

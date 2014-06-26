@@ -6,11 +6,12 @@ module OpenNebula
     CTID = 5590
 
     # resources
-    TEST_DISK = File.expand_path(File.dirname("test/resources/unused_name")) + "/disk.0"
-    TEST_CTX = File.expand_path(File.dirname("test/resources/unused_name")) + "/disk.2"
+    TEST_DISK = File.expand_path(File.dirname("test/resources/unused")) + "/disk.0"
+    TEST_CTX = File.expand_path(File.dirname("test/resources/unused")) + "/disk.2"
 
     # absolute paths describing openvz env
-    CT_CACHE = "/vz/template/cache/#{CTID}.tar.gz"
+    DISTRO = "slackware-10.2-i386-minimal"
+    CT_CACHE = "/vz/template/cache/#{DISTRO}-#{CTID}.tar.gz"
     VM_DATASTORE = "/vz/one/datastores/0/#{VMID}"
     VM_DISK = "#{VM_DATASTORE}/disk.0"
     VM_CTX = "#{VM_DATASTORE}/disk.2.iso"
@@ -31,8 +32,8 @@ module OpenNebula
       `sudo mkdir -p #{dir}`
     end
 
-    def self.symlink(src, dst)
-      `sudo ln -s #{src} #{dst}`
+    def self.symlink(target, link_name)
+      `sudo ln -s #{target} #{link_name}`
     end
 
   end

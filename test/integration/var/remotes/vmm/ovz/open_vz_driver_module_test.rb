@@ -11,19 +11,19 @@ module OpenNebula
     def setup
       @inventory = OpenVZ::Inventory.new
       @driver = OpenVzDriver.new
-      OpenVZ::Util.execute "sudo brctl addbr ovz-test-br0"
 
       # mock_tmm
       TestUtils.mkdir TestUtils::VM_DATASTORE
       TestUtils.symlink TestUtils::TEST_CTX, TestUtils::VM_CTX
       TestUtils.symlink TestUtils::TEST_DISK, TestUtils::VM_DISK
+
+      p "HEHEHE"
     end
 
     def teardown
       TestUtils.purge TestUtils::VM_DATASTORE
       TestUtils.purge_ct TestUtils::CTID
       TestUtils.purge CHECKPOINT_DST
-      OpenVZ::Util.execute "sudo brctl delbr ovz-test-br0"
     end
 
     def test_driver
@@ -32,35 +32,35 @@ module OpenNebula
       ctid = OpenVzDriver.ctid @inventory, TestUtils::VMID.to_s
       container = OpenVZ::Container.new(ctid)
 
-      # deploy
+      ## deploy
       assert_equal ctid, @driver.deploy(@open_vz_data, container)
-      assert @open_vz_data.context == {}
+      assert @open_vz_data.context == {:distro => 'slackware-10.2-i386-minimal'}
       assert_equal true, TestUtils.ct_exists?(ctid)
-      # ensure that we've cleaned up environment
+      ## ensure that we've cleaned up environment
       assert_equal false, File.exists?(TestUtils::CT_CACHE)
 
-      # poll
+      ## poll
       status = @driver.poll container
       assert_equal 'a', status[:state]
-      # there have to be 5 values describing status
+      ## there have to be 5 values describing status
       assert_equal 5, status.size
 
-      # shutdown
+      ## shutdown
       @driver.shutdown container
       assert_match(/exist.*down/, `sudo vzctl status #{ctid}`)
 
-      # reboot
+      ## reboot
       out = @driver.reboot container
       assert_match(/Restarting/, out)
       assert_equal true, TestUtils.ct_exists?(ctid)
 
-      # save (suspend)
+      ## save (suspend)
       @driver.save container, CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_equal true, File.exists?(CHECKPOINT_DST)
       assert_match(/unmounted down/, `sudo vzctl status #{ctid}`)
 
-      # restore
+      ## restore
       @driver.restore container, CHECKPOINT_DST
       assert_equal true, TestUtils.ct_exists?(ctid)
       assert_match(/running/, `sudo vzctl status #{ctid}`)

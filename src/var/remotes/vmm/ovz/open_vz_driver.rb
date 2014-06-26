@@ -62,7 +62,7 @@ module OpenNebula
       apply_network_settings container, open_vz_data.networking
 
       # and contextualise it if user provided any context info
-      contextualise container, open_vz_data.context_disk, open_vz_data.context if open_vz_data.context != {}
+      contextualise container, open_vz_data.context_disk, open_vz_data.context if open_vz_data.context != {} and open_vz_data.context_disk.to_s != ''
 
       container.ctid
     rescue RuntimeError => e
