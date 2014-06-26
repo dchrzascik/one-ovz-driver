@@ -15,8 +15,8 @@ The project is licensed under _Apache License Version 2.0_
 
 ### Version
 
-Current driver version: 1.1, which supports:
- * OpenNebula 3.8
+Current driver version: 1.2, which supports:
+ * OpenNebula 4.6.2
  * OpenVZ kernel version: 2.6.32-042stab088.4 
  
 ### Installation notes and documenation
