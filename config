@@ -2,7 +2,7 @@
 
 # user@host where remote test are performed
 # note that you may need password, unless you have passwordless ssh access
-DOMAIN = 'user@host'
+DOMAIN = 'oneadmin@one38'
 
 # If you want to run integration tests, you must copy/download the driver to/on
 # the openvz host to REMOT_DIRECTORY. Then, you can synchronise source code and
@@ -10,5 +10,5 @@ DOMAIN = 'user@host'
 # $ rake remote_test
 # This will cause source synchronisation (via rsync) and run tests (via ssh) at
 # DOMAIN:REMOTE_DIR
-REMOTE_DIR = 'remote-directory'
+REMOTE_DIR = '/var/lib/one/one-ovz-driver'
 
