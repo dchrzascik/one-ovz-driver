@@ -84,6 +84,7 @@ task :install do
 
   # copy project files to their corresponding ONE dirs
   dirs.each_pair do |key, dir|
+    sh "mkdir -p #{dir}"
     files = Dir.glob("src/#{key}/*")
     FileUtils.cp_r files, dir
     puts "files from #{files} were copied to directory: #{dir}"
